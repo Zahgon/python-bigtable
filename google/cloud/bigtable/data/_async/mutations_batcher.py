@@ -98,13 +98,7 @@ class _FlowControlAsync:
         Returns:
             bool: True if there is capacity to send the pending entry, False otherwise
         """
-        # adjust limits to allow overly large mutations
-        acceptable_size = max(self._max_mutation_bytes, additional_size)
-        acceptable_count = max(self._max_mutation_count, additional_count)
-        # check if we have capacity for new mutation
-        new_size = self._in_flight_mutation_bytes + additional_size
-        new_count = self._in_flight_mutation_count + additional_count
-        return new_size <= acceptable_size and new_count <= acceptable_count
+        pass
 
     @CrossSync.convert
     async def remove_from_flow(
@@ -118,15 +112,7 @@ class _FlowControlAsync:
         Args:
             mutations: mutation or list of mutations to remove from flow control
         """
-        if not isinstance(mutations, list):
-            mutations = [mutations]
-        total_count = sum(len(entry.mutations) for entry in mutations)
-        total_size = sum(entry.size() for entry in mutations)
-        self._in_flight_mutation_count -= total_count
-        self._in_flight_mutation_bytes -= total_size
-        # notify any blocked requests that there is additional capacity
-        async with self._capacity_condition:
-            self._capacity_condition.notify_all()
+        pass
 
     @CrossSync.convert
     async def add_to_flow(self, mutations: RowMutationEntry | list[RowMutationEntry]):
@@ -143,39 +129,7 @@ class _FlowControlAsync:
                 list of mutations that have reserved space in the flow control.
                 Each batch contains at least one mutation.
         """
-        if not isinstance(mutations, list):
-            mutations = [mutations]
-        start_idx = 0
-        end_idx = 0
-        while end_idx < len(mutations):
-            start_idx = end_idx
-            batch_mutation_count = 0
-            # fill up batch until we hit capacity
-            async with self._capacity_condition:
-                while end_idx < len(mutations):
-                    next_entry = mutations[end_idx]
-                    next_size = next_entry.size()
-                    next_count = len(next_entry.mutations)
-                    if (
-                        self._has_capacity(next_count, next_size)
-                        # make sure not to exceed per-request mutation count limits
-                        and (batch_mutation_count + next_count)
-                        <= _MUTATE_ROWS_REQUEST_MUTATION_LIMIT
-                    ):
-                        # room for new mutation; add to batch
-                        end_idx += 1
-                        batch_mutation_count += next_count
-                        self._in_flight_mutation_bytes += next_size
-                        self._in_flight_mutation_count += next_count
-                    elif start_idx != end_idx:
-                        # we have at least one mutation in the batch, so send it
-                        break
-                    else:
-                        # batch is empty. Block until we have capacity
-                        await self._capacity_condition.wait_for(
-                            lambda: self._has_capacity(next_count, next_size)
-                        )
-            yield mutations[start_idx:end_idx]
+        pass
 
 
 @CrossSync.convert_class(sync_name="MutationsBatcher")
@@ -283,15 +237,7 @@ class MutationsBatcherAsync:
             flush_interval: Automatically flush every flush_interval seconds.
                 If None, no time-based flushing is performed.
         """
-        if not interval or interval <= 0:
-            return None
-        while not self._closed.is_set():
-            # wait until interval has passed, or until closed
-            await CrossSync.event_wait(
-                self._closed, timeout=interval, async_break_early=False
-            )
-            if not self._closed.is_set() and self._staged_entries:
-                self._schedule_flush()
+        pass
 
     @CrossSync.convert
     async def append(self, mutation_entry: RowMutationEntry):
@@ -351,18 +297,7 @@ class MutationsBatcherAsync:
         Args:
             new_entries list of RowMutationEntry objects to flush
         """
-        # flush new entries
-        in_process_requests: list[CrossSync.Future[list[FailedMutationEntryError]]] = []
-        async for batch in self._flow_control.add_to_flow(new_entries):
-            batch_task = CrossSync.create_task(
-                self._execute_mutate_rows, batch, sync_executor=self._sync_rpc_executor
-            )
-            in_process_requests.append(batch_task)
-        # wait for all inflight requests to complete
-        found_exceptions = await self._wait_for_batch_results(*in_process_requests)
-        # update exception data to reflect any new errors
-        self._entries_processed_since_last_raise += len(new_entries)
-        self._add_exceptions(found_exceptions)
+        pass
 
     @CrossSync.convert
     async def _execute_mutate_rows(
@@ -380,25 +315,7 @@ class MutationsBatcherAsync:
                 list of FailedMutationEntryError objects for mutations that failed.
                 FailedMutationEntryError objects will not contain index information
         """
-        try:
-            operation = CrossSync._MutateRowsOperation(
-                self._target.client._gapic_client,
-                self._target,
-                batch,
-                operation_timeout=self._operation_timeout,
-                attempt_timeout=self._attempt_timeout,
-                retryable_exceptions=self._retryable_errors,
-            )
-            await operation.start()
-        except MutationsExceptionGroup as e:
-            # strip index information from exceptions, since it is not useful in a batch context
-            for subexc in e.exceptions:
-                subexc.index = None
-            return list(e.exceptions)
-        finally:
-            # mark batch as complete in flow control
-            await self._flow_control.remove_from_flow(batch)
-        return []
+        pass
 
     def _add_exceptions(self, excs: list[Exception]):
         """
@@ -409,15 +326,7 @@ class MutationsBatcherAsync:
         Args:
             excs: list of exceptions to add to the internal store
         """
-        self._exceptions_since_last_raise += len(excs)
-        if excs and len(self._oldest_exceptions) < self._exception_list_limit:
-            # populate oldest_exceptions with found_exceptions
-            addition_count = self._exception_list_limit - len(self._oldest_exceptions)
-            self._oldest_exceptions.extend(excs[:addition_count])
-            excs = excs[addition_count:]
-        if excs:
-            # populate newest_exceptions with remaining found_exceptions
-            self._newest_exceptions.extend(excs[-self._exception_list_limit :])
+        pass
 
     def _raise_exceptions(self):
         """
@@ -465,7 +374,7 @@ class MutationsBatcherAsync:
         Returns:
           - True if the batcher is closed, False otherwise
         """
-        return self._closed.is_set()
+        pass
 
     @CrossSync.convert
     async def close(self):
@@ -491,11 +400,7 @@ class MutationsBatcherAsync:
         """
         Called when program is exited. Raises warning if unflushed mutations remain
         """
-        if not self._closed.is_set() and self._staged_entries:
-            warnings.warn(
-                f"MutationsBatcher for target {self._target!r} was not closed. "
-                f"{len(self._staged_entries)} Unflushed mutations will not be sent to the server."
-            )
+        pass
 
     @staticmethod
     @CrossSync.convert
@@ -516,21 +421,4 @@ class MutationsBatcherAsync:
                 If a task fails with a different exception, it will be included in the
                 output list. Successful tasks will not be represented in the output list.
         """
-        if not tasks:
-            return []
-        exceptions: list[Exception] = []
-        for task in tasks:
-            if CrossSync.is_async:
-                # futures don't need to be awaited in sync mode
-                await task
-            try:
-                exc_list = task.result()
-                if exc_list:
-                    # expect a list of FailedMutationEntryError objects
-                    for exc in exc_list:
-                        # strip index information
-                        exc.index = None
-                    exceptions.extend(exc_list)
-            except Exception as e:
-                exceptions.append(e)
-        return exceptions
+        pass

@@ -48,14 +48,7 @@ def _parse_array_type(
     """
     used for parsing an array represented as a protobuf to a python list.
     """
-    return list(
-        map(
-            lambda val: _parse_pb_value_to_python_value(
-                val, metadata_type.element_type, column_name, column_info
-            ),
-            value.array_value.values,
-        )
-    )
+    pass
 
 
 def _parse_map_type(
@@ -74,29 +67,7 @@ def _parse_map_type(
     must handle the case in which they do. If the same key appears
     multiple times, the _last_ value takes precedence.
     """
-
-    try:
-        return dict(
-            map(
-                lambda map_entry: (
-                    _parse_pb_value_to_python_value(
-                        map_entry.array_value.values[0],
-                        metadata_type.key_type,
-                        f"{column_name}.key" if column_name is not None else None,
-                        column_info,
-                    ),
-                    _parse_pb_value_to_python_value(
-                        map_entry.array_value.values[1],
-                        metadata_type.value_type,
-                        f"{column_name}.value" if column_name is not None else None,
-                        column_info,
-                    ),
-                ),
-                value.array_value.values,
-            )
-        )
-    except IndexError:
-        raise ValueError("Invalid map entry - less or more than two values.")
+    pass
 
 
 def _parse_struct_type(
@@ -109,26 +80,7 @@ def _parse_struct_type(
     used for parsing a struct represented as a protobuf to a
     google.cloud.bigtable.data.execute_query.Struct
     """
-    if len(value.array_value.values) != len(metadata_type.fields):
-        raise ValueError("Mismatched lengths of values and types.")
-
-    struct = Struct()
-    for value, field in zip(value.array_value.values, metadata_type.fields):
-        field_name, field_type = field
-        nested_column_name: str | None
-        if column_name and field_name:
-            # qualify the column name for nested lookups
-            nested_column_name = f"{column_name}.{field_name}"
-        else:
-            nested_column_name = None
-        struct.add_field(
-            field_name,
-            _parse_pb_value_to_python_value(
-                value, field_type, nested_column_name, column_info
-            ),
-        )
-
-    return struct
+    pass
 
 
 def _parse_timestamp_type(
@@ -140,7 +92,7 @@ def _parse_timestamp_type(
     """
     used for parsing a timestamp represented as a protobuf to DatetimeWithNanoseconds
     """
-    return DatetimeWithNanoseconds.from_timestamp_pb(value.timestamp_value)
+    pass
 
 
 def _parse_proto_type(
@@ -171,17 +123,7 @@ def _parse_proto_type(
         google.protobuf.message.DecodeError: If `value.bytes_value` cannot be
             parsed as the Message type specified in `column_info`.
     """
-    if (
-        column_name is not None
-        and column_info is not None
-        and column_info.get(column_name) is not None
-    ):
-        default_proto_message = column_info.get(column_name)
-        if isinstance(default_proto_message, Message):
-            proto_message = type(default_proto_message)()
-            proto_message.ParseFromString(value.bytes_value)
-            return proto_message
-    return value.bytes_value
+    pass
 
 
 def _parse_enum_type(
@@ -210,15 +152,7 @@ def _parse_enum_type(
         original integer value (value.int_value). This fallback ensures the
         raw integer representation is still accessible.
     """
-    if (
-        column_name is not None
-        and column_info is not None
-        and column_info.get(column_name) is not None
-    ):
-        proto_enum = column_info.get(column_name)
-        if isinstance(proto_enum, EnumTypeWrapper):
-            return proto_enum.Name(value.int_value)
-    return value.int_value
+    pass
 
 
 ParserCallable = Callable[

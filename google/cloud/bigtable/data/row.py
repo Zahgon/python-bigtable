@@ -72,13 +72,7 @@ class Row:
         Returns:
             OrderedDict: Index of cells
         """
-        if self._index_data is None:
-            self._index_data = OrderedDict()
-            for cell in self.cells:
-                self._index_data.setdefault(cell.family, OrderedDict()).setdefault(
-                    cell.qualifier, []
-                ).append(cell)
-        return self._index_data
+        pass
 
     @classmethod
     def _from_pb(cls, row_pb: RowPB) -> Row:
@@ -317,7 +311,7 @@ class Row:
         Returns:
             list[tuple[str, bytes]]: List of (family, qualifier) pairs
         """
-        return [(f, q) for f in self._index for q in self._index[f]]
+        pass
 
     def __eq__(self, other):
         """

@@ -127,30 +127,7 @@ class _ReadRowsOperationAsync:
         Yields:
             Row: The next row in the stream
         """
-        # revise request keys and ranges between attempts
-        if self._last_yielded_row_key is not None:
-            # if this is a retry, try to trim down the request to avoid ones we've already processed
-            try:
-                self.request.rows = self._revise_request_rowset(
-                    row_set=self.request.rows,
-                    last_seen_row_key=self._last_yielded_row_key,
-                )
-            except _RowSetComplete:
-                # if we've already seen all the rows, we're done
-                return self.merge_rows(None)
-        # revise the limit based on number of rows already yielded
-        if self._remaining_count is not None:
-            self.request.rows_limit = self._remaining_count
-            if self._remaining_count == 0:
-                return self.merge_rows(None)
-        # create and return a new row merger
-        gapic_stream = self.target.client._gapic_client.read_rows(
-            self.request,
-            timeout=next(self.attempt_timeout_gen),
-            retry=None,
-        )
-        chunked_stream = self.chunk_stream(gapic_stream)
-        return self.merge_rows(chunked_stream)
+        pass
 
     @CrossSync.convert()
     async def chunk_stream(
@@ -164,45 +141,7 @@ class _ReadRowsOperationAsync:
         Yields:
             ReadRowsResponsePB.CellChunk: the next chunk in the stream
         """
-        async for resp in await stream:
-            # extract proto from proto-plus wrapper
-            resp = resp._pb
-
-            # handle last_scanned_row_key packets, sent when server
-            # has scanned past the end of the row range
-            if resp.last_scanned_row_key:
-                if (
-                    self._last_yielded_row_key is not None
-                    and resp.last_scanned_row_key <= self._last_yielded_row_key
-                ):
-                    raise InvalidChunk("last scanned out of order")
-                self._last_yielded_row_key = resp.last_scanned_row_key
-
-            current_key = None
-            # process each chunk in the response
-            for c in resp.chunks:
-                if current_key is None:
-                    current_key = c.row_key
-                    if current_key is None:
-                        raise InvalidChunk("first chunk is missing a row key")
-                    elif (
-                        self._last_yielded_row_key
-                        and current_key <= self._last_yielded_row_key
-                    ):
-                        raise InvalidChunk("row keys should be strictly increasing")
-
-                yield c
-
-                if c.reset_row:
-                    current_key = None
-                elif c.commit_row:
-                    # update row state after each commit
-                    self._last_yielded_row_key = current_key
-                    if self._remaining_count is not None:
-                        self._remaining_count -= 1
-                        if self._remaining_count < 0:
-                            raise InvalidChunk("emit count exceeds row limit")
-                    current_key = None
+        pass
 
     @staticmethod
     @CrossSync.convert(
@@ -219,108 +158,7 @@ class _ReadRowsOperationAsync:
         Yields:
             Row: the next row in the stream
         """
-        if chunks is None:
-            return
-        it = chunks.__aiter__()
-        # For each row
-        while True:
-            try:
-                c = await it.__anext__()
-            except CrossSync.StopIteration:
-                # stream complete
-                return
-            row_key = c.row_key
-
-            if not row_key:
-                raise InvalidChunk("first row chunk is missing key")
-
-            cells = []
-
-            # shared per cell storage
-            family: str | None = None
-            qualifier: bytes | None = None
-
-            try:
-                # for each cell
-                while True:
-                    if c.reset_row:
-                        raise _ResetRow(c)
-                    k = c.row_key
-                    f = c.family_name.value
-                    q = c.qualifier.value if c.HasField("qualifier") else None
-                    if k and k != row_key:
-                        raise InvalidChunk("unexpected new row key")
-                    if f:
-                        family = f
-                        if q is not None:
-                            qualifier = q
-                        else:
-                            raise InvalidChunk("new family without qualifier")
-                    elif family is None:
-                        raise InvalidChunk("missing family")
-                    elif q is not None:
-                        if family is None:
-                            raise InvalidChunk("new qualifier without family")
-                        qualifier = q
-                    elif qualifier is None:
-                        raise InvalidChunk("missing qualifier")
-
-                    ts = c.timestamp_micros
-                    labels = c.labels if c.labels else []
-                    value = c.value
-
-                    # merge split cells
-                    if c.value_size > 0:
-                        buffer = [value]
-                        while c.value_size > 0:
-                            # throws when premature end
-                            c = await it.__anext__()
-
-                            t = c.timestamp_micros
-                            cl = c.labels
-                            k = c.row_key
-                            if (
-                                c.HasField("family_name")
-                                and c.family_name.value != family
-                            ):
-                                raise InvalidChunk("family changed mid cell")
-                            if (
-                                c.HasField("qualifier")
-                                and c.qualifier.value != qualifier
-                            ):
-                                raise InvalidChunk("qualifier changed mid cell")
-                            if t and t != ts:
-                                raise InvalidChunk("timestamp changed mid cell")
-                            if cl and cl != labels:
-                                raise InvalidChunk("labels changed mid cell")
-                            if k and k != row_key:
-                                raise InvalidChunk("row key changed mid cell")
-
-                            if c.reset_row:
-                                raise _ResetRow(c)
-                            buffer.append(c.value)
-                        value = b"".join(buffer)
-                    cells.append(
-                        Cell(value, row_key, family, qualifier, ts, list(labels))
-                    )
-                    if c.commit_row:
-                        yield Row(row_key, cells)
-                        break
-                    c = await it.__anext__()
-            except _ResetRow as e:
-                c = e.chunk
-                if (
-                    c.row_key
-                    or c.HasField("family_name")
-                    or c.HasField("qualifier")
-                    or c.timestamp_micros
-                    or c.labels
-                    or c.value
-                ):
-                    raise InvalidChunk("reset row with data")
-                continue
-            except CrossSync.StopIteration:
-                raise InvalidChunk("premature end of stream")
+        pass
 
     @staticmethod
     def _revise_request_rowset(
@@ -338,28 +176,4 @@ class _ReadRowsOperationAsync:
         Raises:
             _RowSetComplete: if there are no rows left to process after the revision
         """
-        # if user is doing a whole table scan, start a new one with the last seen key
-        if row_set is None or (not row_set.row_ranges and not row_set.row_keys):
-            last_seen = last_seen_row_key
-            return RowSetPB(row_ranges=[RowRangePB(start_key_open=last_seen)])
-        # remove seen keys from user-specific key list
-        adjusted_keys: list[bytes] = [
-            k for k in row_set.row_keys if k > last_seen_row_key
-        ]
-        # adjust ranges to ignore keys before last seen
-        adjusted_ranges: list[RowRangePB] = []
-        for row_range in row_set.row_ranges:
-            end_key = row_range.end_key_closed or row_range.end_key_open or None
-            if end_key is None or end_key > last_seen_row_key:
-                # end range is after last seen key
-                new_range = RowRangePB(row_range)
-                start_key = row_range.start_key_closed or row_range.start_key_open
-                if start_key is None or start_key <= last_seen_row_key:
-                    # replace start key with last seen
-                    new_range.start_key_open = last_seen_row_key
-                adjusted_ranges.append(new_range)
-        if len(adjusted_keys) == 0 and len(adjusted_ranges) == 0:
-            # if the query is empty after revision, raise an exception
-            # this will avoid an unwanted full table scan
-            raise _RowSetComplete()
-        return RowSetPB(row_keys=adjusted_keys, row_ranges=adjusted_ranges)
+        pass

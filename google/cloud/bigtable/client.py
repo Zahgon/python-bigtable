@@ -76,15 +76,7 @@ _GRPC_CHANNEL_OPTIONS = (
 
 
 def _create_gapic_client(client_class, client_options=None, transport=None):
-    def inner(self):
-        return client_class(
-            credentials=None,
-            client_info=self._client_info,
-            client_options=client_options,
-            transport=transport,
-        )
-
-    return inner
+    pass
 
 
 class Client(ClientWithProject):
@@ -203,15 +195,7 @@ class Client(ClientWithProject):
         Returns:
             Tuple[str, ...]: The tuple of scopes.
         """
-        if self._read_only:
-            scopes = (READ_ONLY_SCOPE,)
-        else:
-            scopes = (DATA_SCOPE,)
-
-        if self._admin:
-            scopes += (ADMIN_SCOPE,)
-
-        return scopes
+        pass
 
     def _emulator_channel(self, transport, options):
         """Create a channel for use with the Bigtable emulator.
@@ -223,33 +207,10 @@ class Client(ClientWithProject):
         Returns:
             grpc.Channel or grpc.aio.Channel
         """
-        # Note: this code also exists in the firestore client.
-        if "GrpcAsyncIOTransport" in str(transport.__name__):
-            channel_fn = grpc.aio.insecure_channel
-        else:
-            channel_fn = grpc.insecure_channel
-        return channel_fn(self._emulator_host, options=options)
+        pass
 
     def _create_gapic_client_channel(self, client_class, grpc_transport):
-        if self._emulator_host is not None:
-            api_endpoint = self._emulator_host
-        elif self._client_options and self._client_options.api_endpoint:
-            api_endpoint = self._client_options.api_endpoint
-        else:
-            api_endpoint = client_class.DEFAULT_ENDPOINT
-
-        if self._emulator_host is not None:
-            channel = self._emulator_channel(
-                transport=grpc_transport,
-                options=_GRPC_CHANNEL_OPTIONS,
-            )
-        else:
-            channel = grpc_transport.create_channel(
-                host=api_endpoint,
-                credentials=self._credentials,
-                options=_GRPC_CHANNEL_OPTIONS,
-            )
-        return grpc_transport(channel=channel, host=api_endpoint)
+        pass
 
     @property
     def project_path(self):
@@ -274,7 +235,7 @@ class Client(ClientWithProject):
         :rtype: str
         :returns: Return a fully-qualified project string.
         """
-        return self.instance_admin_client.common_project_path(self.project)
+        pass
 
     @property
     def table_data_client(self):
@@ -290,18 +251,7 @@ class Client(ClientWithProject):
         :rtype: :class:`.bigtable_v2.BigtableClient`
         :returns: A BigtableClient object.
         """
-        if self._table_data_client is None:
-            transport = self._create_gapic_client_channel(
-                bigtable_v2.BigtableClient,
-                BigtableGrpcTransport,
-            )
-            klass = _create_gapic_client(
-                bigtable_v2.BigtableClient,
-                client_options=self._client_options,
-                transport=transport,
-            )
-            self._table_data_client = klass(self)
-        return self._table_data_client
+        pass
 
     @property
     def table_admin_client(self):
@@ -320,21 +270,7 @@ class Client(ClientWithProject):
                  client is not an admin client or if it has not been
                  :meth:`start`-ed.
         """
-        if self._table_admin_client is None:
-            if not self._admin:
-                raise ValueError("Client is not an admin client.")
-
-            transport = self._create_gapic_client_channel(
-                bigtable_admin_v2.BaseBigtableTableAdminClient,
-                BigtableTableAdminGrpcTransport,
-            )
-            klass = _create_gapic_client(
-                bigtable_admin_v2.BaseBigtableTableAdminClient,
-                client_options=self._admin_client_options,
-                transport=transport,
-            )
-            self._table_admin_client = klass(self)
-        return self._table_admin_client
+        pass
 
     @property
     def instance_admin_client(self):
@@ -353,21 +289,7 @@ class Client(ClientWithProject):
                  client is not an admin client or if it has not been
                  :meth:`start`-ed.
         """
-        if self._instance_admin_client is None:
-            if not self._admin:
-                raise ValueError("Client is not an admin client.")
-
-            transport = self._create_gapic_client_channel(
-                bigtable_admin_v2.BigtableInstanceAdminClient,
-                BigtableInstanceAdminGrpcTransport,
-            )
-            klass = _create_gapic_client(
-                bigtable_admin_v2.BigtableInstanceAdminClient,
-                client_options=self._admin_client_options,
-                transport=transport,
-            )
-            self._instance_admin_client = klass(self)
-        return self._instance_admin_client
+        pass
 
     def instance(self, instance_id, display_name=None, instance_type=None, labels=None):
         """Factory to create a instance associated with this client.
@@ -436,11 +358,7 @@ class Client(ClientWithProject):
             'failed_locations' is a list of locations which could not
             be resolved.
         """
-        resp = self.instance_admin_client.list_instances(
-            request={"parent": self.project_path}
-        )
-        instances = [Instance.from_pb(instance, self) for instance in resp.instances]
-        return instances, resp.failed_locations
+        pass
 
     def list_clusters(self):
         """List the clusters in the project.

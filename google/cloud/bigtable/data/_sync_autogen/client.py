@@ -210,20 +210,7 @@ class BigtableDataClient(ClientWithProject):
           - **kwargs: keyword arguments passed by the gapic layer to create a new channel with
         Returns:
           a custom wrapped swappable channel"""
-        create_channel_fn: Callable[[], Channel]
-        if self._emulator_host is not None:
-            create_channel_fn = partial(insecure_channel, self._emulator_host)
-        else:
-
-            def sync_create_channel_fn():
-                return intercept_channel(
-                    TransportType.create_channel(*args, **kwargs),
-                    self._metrics_interceptor,
-                )
-
-            create_channel_fn = sync_create_channel_fn
-        new_channel = SwappableChannelType(create_channel_fn)
-        return new_channel
+        pass
 
     @property
     def universe_domain(self) -> str:
@@ -231,7 +218,7 @@ class BigtableDataClient(ClientWithProject):
 
         Returns:
             str: The universe domain used by the client instance."""
-        return self._gapic_client.universe_domain
+        pass
 
     @property
     def api_endpoint(self) -> str:
@@ -239,30 +226,19 @@ class BigtableDataClient(ClientWithProject):
 
         Returns:
             str: The API endpoint used by the client instance."""
-        return self._gapic_client.api_endpoint
+        pass
 
     @staticmethod
     def _client_version() -> str:
         """Helper function to return the client version string for this client"""
-        version_str = f"{google.cloud.bigtable.__version__}-data"
-        return version_str
+        pass
 
     def _start_background_channel_refresh(self) -> None:
         """Starts a background task to ping and warm grpc channel
 
         Raises:
             None"""
-        if (
-            not self._channel_refresh_task
-            and (not self._emulator_host)
-            and (not self._is_closed.is_set())
-        ):
-            CrossSync._Sync_Impl.verify_async_event_loop()
-            self._channel_refresh_task = CrossSync._Sync_Impl.create_task(
-                self._manage_channel,
-                sync_executor=self._executor,
-                task_name=f"{self.__class__.__name__} channel refresh",
-            )
+        pass
 
     def close(self, timeout: float | None = 2.0):
         """Cancel all background tasks"""
@@ -290,37 +266,11 @@ class BigtableDataClient(ClientWithProject):
         Returns:
             list[BaseException | None]: sequence of results or exceptions from the ping requests
         """
-        channel = channel or self.transport.grpc_channel
-        instance_list = (
-            [instance_key] if instance_key is not None else self._active_instances
-        )
-        ping_rpc = channel.unary_unary(
-            "/google.bigtable.v2.Bigtable/PingAndWarm",
-            request_serializer=PingAndWarmRequest.serialize,
-        )
-        partial_list = [
-            partial(
-                ping_rpc,
-                request={"name": instance_name, "app_profile_id": app_profile_id},
-                metadata=[
-                    (
-                        "x-goog-request-params",
-                        f"name={instance_name}&app_profile_id={app_profile_id}",
-                    )
-                ],
-                wait_for_ready=True,
-            )
-            for (instance_name, app_profile_id) in instance_list
-        ]
-        result_list = CrossSync._Sync_Impl.gather_partials(
-            partial_list, return_exceptions=True, sync_executor=self._executor
-        )
-        return [r or None for r in result_list]
+        pass
 
     def _invalidate_channel_stubs(self):
         """Helper to reset the cached stubs. Needed when changing out the grpc channel"""
-        self.transport._stubs = {}
-        self.transport._prep_wrapped_messages(self.client_info)
+        pass
 
     def _manage_channel(
         self,
@@ -344,34 +294,7 @@ class BigtableDataClient(ClientWithProject):
                 between `refresh_interval_min` and `refresh_interval_max`
             grace_period: time to allow previous channel to serve existing
                 requests before closing, in seconds"""
-        if not isinstance(self.transport.grpc_channel, SwappableChannelType):
-            warnings.warn("Channel does not support auto-refresh.")
-            return
-        super_channel: SwappableChannelType = self.transport.grpc_channel
-        first_refresh = self._channel_init_time + random.uniform(
-            refresh_interval_min, refresh_interval_max
-        )
-        next_sleep = max(first_refresh - time.monotonic(), 0)
-        if next_sleep > 0:
-            self._ping_and_warm_instances(channel=super_channel)
-        while not self._is_closed.is_set():
-            CrossSync._Sync_Impl.event_wait(
-                self._is_closed, next_sleep, async_break_early=False
-            )
-            if self._is_closed.is_set():
-                break
-            start_timestamp = time.monotonic()
-            new_channel = super_channel.create_channel()
-            self._ping_and_warm_instances(channel=new_channel)
-            old_channel = super_channel.swap_channel(new_channel)
-            self._invalidate_channel_stubs()
-            if grace_period:
-                CrossSync._Sync_Impl.event_wait(
-                    self._is_closed, grace_period, async_break_early=False
-                )
-            old_channel.close()
-            next_refresh = random.uniform(refresh_interval_min, refresh_interval_max)
-            next_sleep = max(next_refresh - (time.monotonic() - start_timestamp), 0)
+        pass
 
     def _register_instance(
         self, instance_id: str, app_profile_id: Optional[str], owner_id: int
@@ -388,15 +311,7 @@ class BigtableDataClient(ClientWithProject):
               _instance_owners, and instances will only be unregistered when all
               owners call _remove_instance_registration. Can be obtained by calling
               `id` identity funcion, using `id(owner)`"""
-        instance_name = self._gapic_client.instance_path(self.project, instance_id)
-        instance_key = _WarmedInstanceKey(instance_name, app_profile_id)
-        self._instance_owners.setdefault(instance_key, set()).add(owner_id)
-        if instance_key not in self._active_instances:
-            self._active_instances.add(instance_key)
-            if self._channel_refresh_task:
-                self._ping_and_warm_instances(instance_key)
-            else:
-                self._start_background_channel_refresh()
+        pass
 
     def _remove_instance_registration(
         self, instance_id: str, app_profile_id: Optional[str], owner_id: int
@@ -507,9 +422,7 @@ class BigtableDataClient(ClientWithProject):
             AuthorizedView: a table instance for making data API requests
         Raises:
             None"""
-        return CrossSync._Sync_Impl.AuthorizedView(
-            self, instance_id, table_id, authorized_view_id, *args, **kwargs
-        )
+        pass
 
     def execute_query(
         self,
@@ -647,58 +560,7 @@ class BigtableDataClient(ClientWithProject):
                 a parameter is passed without an explicit type, and the type cannot be infered
             google.protobuf.message.DecodeError: raised if the deserialization of a PROTO/ENUM value fails.
         """
-        instance_name = self._gapic_client.instance_path(self.project, instance_id)
-        converted_param_types = _to_param_types(parameters, parameter_types)
-        prepare_request = {
-            "instance_name": instance_name,
-            "query": query,
-            "app_profile_id": app_profile_id,
-            "param_types": converted_param_types,
-            "proto_format": {},
-        }
-        prepare_predicate = retries.if_exception_type(
-            *[_get_error_type(e) for e in prepare_retryable_errors]
-        )
-        (prepare_operation_timeout, prepare_attempt_timeout) = _align_timeouts(
-            prepare_operation_timeout, prepare_attempt_timeout
-        )
-        prepare_sleep_generator = retries.exponential_sleep_generator(0.01, 2, 60)
-        target = partial(
-            self._gapic_client.prepare_query,
-            request=prepare_request,
-            timeout=prepare_attempt_timeout,
-            retry=None,
-        )
-        prepare_result = CrossSync._Sync_Impl.retry_target(
-            target,
-            prepare_predicate,
-            prepare_sleep_generator,
-            prepare_operation_timeout,
-            exception_factory=_retry_exception_factory,
-        )
-        prepare_metadata = _pb_metadata_to_metadata_types(prepare_result.metadata)
-        retryable_excs = [_get_error_type(e) for e in retryable_errors]
-        pb_params = _format_execute_query_params(parameters, parameter_types)
-        request_body = {
-            "instance_name": instance_name,
-            "app_profile_id": app_profile_id,
-            "prepared_query": prepare_result.prepared_query,
-            "params": pb_params,
-        }
-        (operation_timeout, attempt_timeout) = _align_timeouts(
-            operation_timeout, attempt_timeout
-        )
-        return CrossSync._Sync_Impl.ExecuteQueryIterator(
-            self,
-            instance_id,
-            app_profile_id,
-            request_body,
-            prepare_metadata,
-            attempt_timeout,
-            operation_timeout,
-            retryable_excs=retryable_excs,
-            column_info=column_info,
-        )
+        pass
 
     def __enter__(self):
         self._start_background_channel_refresh()
@@ -1030,57 +892,7 @@ class _DataApiTarget(abc.ABC):
         Raises:
             ShardedReadRowsExceptionGroup: if any of the queries failed
             ValueError: if the query_list is empty"""
-        if not sharded_query:
-            raise ValueError("empty sharded_query")
-        (operation_timeout, attempt_timeout) = _get_timeouts(
-            operation_timeout, attempt_timeout, self
-        )
-        rpc_timeout_generator = _attempt_timeout_generator(
-            operation_timeout, operation_timeout
-        )
-        concurrency_sem = CrossSync._Sync_Impl.Semaphore(_CONCURRENCY_LIMIT)
-
-        def read_rows_with_semaphore(query):
-            with concurrency_sem:
-                shard_timeout = next(rpc_timeout_generator)
-                if shard_timeout <= 0:
-                    raise DeadlineExceeded(
-                        "Operation timeout exceeded before starting query"
-                    )
-                return self.read_rows(
-                    query,
-                    operation_timeout=shard_timeout,
-                    attempt_timeout=min(attempt_timeout, shard_timeout),
-                    retryable_errors=retryable_errors,
-                )
-
-        routine_list = [
-            partial(read_rows_with_semaphore, query) for query in sharded_query
-        ]
-        batch_result = CrossSync._Sync_Impl.gather_partials(
-            routine_list, return_exceptions=True, sync_executor=self.client._executor
-        )
-        error_dict = {}
-        shard_idx = 0
-        results_list = []
-        for result in batch_result:
-            if isinstance(result, Exception):
-                error_dict[shard_idx] = result
-            elif isinstance(result, BaseException):
-                raise result
-            else:
-                results_list.extend(result)
-            shard_idx += 1
-        if error_dict:
-            raise ShardedReadRowsExceptionGroup(
-                [
-                    FailedQueryShardError(idx, sharded_query[idx], e)
-                    for (idx, e) in error_dict.items()
-                ],
-                results_list,
-                len(sharded_query),
-            )
-        return results_list
+        pass
 
     def row_exists(
         self,
@@ -1114,19 +926,7 @@ class _DataApiTarget(abc.ABC):
                 from any retries that failed
             google.api_core.exceptions.GoogleAPIError: raised if the request encounters an unrecoverable error
         """
-        if row_key is None:
-            raise ValueError("row_key must be string or bytes")
-        strip_filter = StripValueTransformerFilter(flag=True)
-        limit_filter = CellsRowLimitFilter(1)
-        chain_filter = RowFilterChain(filters=[limit_filter, strip_filter])
-        query = ReadRowsQuery(row_keys=row_key, limit=1, row_filter=chain_filter)
-        results = self.read_rows(
-            query,
-            operation_timeout=operation_timeout,
-            attempt_timeout=attempt_timeout,
-            retryable_errors=retryable_errors,
-        )
-        return len(results) > 0
+        pass
 
     def sample_row_keys(
         self,
@@ -1165,33 +965,7 @@ class _DataApiTarget(abc.ABC):
                 from any retries that failed
             google.api_core.exceptions.GoogleAPIError: raised if the request encounters an unrecoverable error
         """
-        (operation_timeout, attempt_timeout) = _get_timeouts(
-            operation_timeout, attempt_timeout, self
-        )
-        attempt_timeout_gen = _attempt_timeout_generator(
-            attempt_timeout, operation_timeout
-        )
-        retryable_excs = _get_retryable_errors(retryable_errors, self)
-        predicate = retries.if_exception_type(*retryable_excs)
-        sleep_generator = retries.exponential_sleep_generator(0.01, 2, 60)
-
-        def execute_rpc():
-            results = self.client._gapic_client.sample_row_keys(
-                request=SampleRowKeysRequest(
-                    app_profile_id=self.app_profile_id, **self._request_path
-                ),
-                timeout=next(attempt_timeout_gen),
-                retry=None,
-            )
-            return [(s.row_key, s.offset_bytes) for s in results]
-
-        return CrossSync._Sync_Impl.retry_target(
-            execute_rpc,
-            predicate,
-            sleep_generator,
-            operation_timeout,
-            exception_factory=_retry_exception_factory,
-        )
+        pass
 
     def mutations_batcher(
         self,
@@ -1518,7 +1292,7 @@ class Table(_DataApiTarget):
 
     @property
     def _request_path(self) -> dict[str, str]:
-        return {"table_name": self.table_name}
+        pass
 
 
 @CrossSync._Sync_Impl.add_mapping_decorator("AuthorizedView")
@@ -1586,4 +1360,4 @@ class AuthorizedView(_DataApiTarget):
 
     @property
     def _request_path(self) -> dict[str, str]:
-        return {"authorized_view_name": self.authorized_view_name}
+        pass

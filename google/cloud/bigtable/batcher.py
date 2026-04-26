@@ -160,10 +160,7 @@ class _FlowControl(object):
         Release the resources.
         Decrement the row size to allow enqueued mutations to be run.
         """
-        with self._lock:
-            self.inflight_mutations -= batch_info.mutations_count
-            self.inflight_size -= batch_info.mutations_size
-        self.set_flow_control_status()
+        pass
 
 
 class MutationsBatcher(object):
@@ -232,11 +229,11 @@ class MutationsBatcher(object):
 
     @property
     def flush_count(self):
-        return self._rows.flush_count
+        pass
 
     @property
     def max_row_bytes(self):
-        return self._rows.max_mutation_bytes
+        pass
 
     def __enter__(self):
         """Starting the MutationsBatcher as a context manager"""
@@ -348,9 +345,7 @@ class MutationsBatcher(object):
         Raise exceptions if there's any.
         Release the resources locked by the flow control and allow enqueued tasks to be run.
         """
-        processed_rows = self.futures_mapping[future]
-        self.flow_control.release(processed_rows)
-        del self.futures_mapping[future]
+        pass
 
     def _row_fits_in_batch(self, row, batch_info):
         """Checks if a row can fit in the current batch.

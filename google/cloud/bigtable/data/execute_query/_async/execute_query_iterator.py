@@ -60,11 +60,7 @@ __CROSS_SYNC_OUTPUT__ = (
 
 
 def _has_resume_token(response: ExecuteQueryResponse) -> bool:
-    response_pb = response._pb  # proto-plus attribute retrieval is slow.
-    if response_pb.HasField("results"):
-        results = response_pb.results
-        return len(results.resume_token) > 0
-    return False
+    pass
 
 
 @CrossSync.convert_class(sync_name="ExecuteQueryIterator")
@@ -158,36 +154,24 @@ class ExecuteQueryIteratorAsync:
     @property
     def is_closed(self) -> bool:
         """Returns True if the iterator is closed, False otherwise."""
-        return self._is_closed
+        pass
 
     @property
     def app_profile_id(self) -> Optional[str]:
         """Returns the app_profile_id of the iterator."""
-        return self._app_profile_id
+        pass
 
     @property
     def table_name(self) -> Optional[str]:
         """Returns the table_name of the iterator."""
-        return self._table_name
+        pass
 
     @CrossSync.convert
     async def _make_request_with_resume_token(self):
         """
         perfoms the rpc call using the correct resume token.
         """
-        resume_token = self._byte_cursor.prepare_for_new_request()
-        request = ExecuteQueryRequestPB(
-            {
-                **self._request_body,
-                "resume_token": resume_token,
-            }
-        )
-        return await self._client._gapic_client.execute_query(
-            request,
-            timeout=next(self._attempt_timeout_gen),
-            metadata=self._req_metadata,
-            retry=None,
-        )
+        pass
 
     @CrossSync.convert
     async def _next_impl(self) -> CrossSync.Iterator[QueryResultRow]:
@@ -195,42 +179,7 @@ class ExecuteQueryIteratorAsync:
         Generator wrapping the response stream which parses the stream results
         and returns full `QueryResultRow`s.
         """
-        try:
-            async for response in self._stream:
-                try:
-                    # we've received a resume token, so we can finalize the metadata
-                    if self._final_metadata is None and _has_resume_token(response):
-                        self._finalize_metadata()
-
-                    batches_to_parse = self._byte_cursor.consume(response)
-                    if not batches_to_parse:
-                        continue
-                    # metadata must be set at this point since there must be a resume_token
-                    # for byte_cursor to yield data
-                    if not self.metadata:
-                        raise ValueError(
-                            "Error parsing response before finalizing metadata"
-                        )
-                    results = self._reader.consume(
-                        batches_to_parse, self.metadata, self._column_info
-                    )
-                    if results is None:
-                        continue
-
-                except ValueError as e:
-                    raise InvalidExecuteQueryResponse(
-                        "Invalid ExecuteQuery response received"
-                    ) from e
-
-                for result in results:
-                    yield result
-            # this means the stream has finished with no responses. In that case we know the
-            # latest_prepare_reponses was used successfully so we can finalize the metadata
-            if self._final_metadata is None:
-                self._finalize_metadata()
-            self._fully_consumed = True
-        finally:
-            self._close_internal()
+        pass
 
     @CrossSync.convert(sync_name="__next__", replace_symbols={"__anext__": "__next__"})
     async def __anext__(self) -> QueryResultRow:
@@ -269,7 +218,7 @@ class ExecuteQueryIteratorAsync:
           - It send the next chunk with a checksum and resume_token, closing the batch.
         In this we need to use the updated schema from the refreshed prepare request.
         """
-        self._final_metadata = self._prepare_metadata
+        pass
 
     @property
     def metadata(self) -> Metadata:

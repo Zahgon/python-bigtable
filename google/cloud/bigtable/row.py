@@ -73,7 +73,7 @@ class Row(object):
         :rtype: bytes
         :returns: The key for the current row.
         """
-        return self._row_key
+        pass
 
     @property
     def table(self):
@@ -220,33 +220,7 @@ class _SetDeleteRow(Row):
         :param state: (Optional) The state that is passed along to
                       :meth:`_get_mutations`.
         """
-        mutations_list = self._get_mutations(state)
-        if columns is self.ALL_COLUMNS:
-            mutation_val = data_v2_pb2.Mutation.DeleteFromFamily(
-                family_name=column_family_id
-            )
-            mutation_pb = data_v2_pb2.Mutation(delete_from_family=mutation_val)
-            mutations_list.append(mutation_pb)
-        else:
-            delete_kwargs = {}
-            if time_range is not None:
-                delete_kwargs["time_range"] = time_range.to_pb()
-
-            to_append = []
-            for column in columns:
-                column = _to_bytes(column)
-                # time_range will never change if present, but the rest of
-                # delete_kwargs will
-                delete_kwargs.update(
-                    family_name=column_family_id, column_qualifier=column
-                )
-                mutation_val = data_v2_pb2.Mutation.DeleteFromColumn(**delete_kwargs)
-                mutation_pb = data_v2_pb2.Mutation(delete_from_column=mutation_val)
-                to_append.append(mutation_pb)
-
-            # We don't add the mutations until all columns have been
-            # processed without error.
-            mutations_list.extend(to_append)
+        pass
 
 
 class DirectRow(_SetDeleteRow):
@@ -407,9 +381,7 @@ class DirectRow(_SetDeleteRow):
         :param time_range: (Optional) The range of time within which cells
                            should be deleted.
         """
-        self._delete_cells(
-            column_family_id, [column], time_range=time_range, state=None
-        )
+        pass
 
     def delete_cells(self, column_family_id, columns, time_range=None):
         """Deletes cells in this row.
@@ -443,7 +415,7 @@ class DirectRow(_SetDeleteRow):
         :param time_range: (Optional) The range of time within which cells
                            should be deleted.
         """
-        self._delete_cells(column_family_id, columns, time_range=time_range, state=None)
+        pass
 
     def commit(self):
         """Makes a ``MutateRow`` API request.
@@ -714,9 +686,7 @@ class ConditionalRow(_SetDeleteRow):
         :param state: (Optional) The state that the mutation should be
                       applied in. Defaults to :data:`True`.
         """
-        self._delete_cells(
-            column_family_id, [column], time_range=time_range, state=state
-        )
+        pass
 
     def delete_cells(self, column_family_id, columns, time_range=None, state=True):
         """Deletes cells in this row.
@@ -754,9 +724,7 @@ class ConditionalRow(_SetDeleteRow):
         :param state: (Optional) The state that the mutation should be
                       applied in. Defaults to :data:`True`.
         """
-        self._delete_cells(
-            column_family_id, columns, time_range=time_range, state=state
-        )
+        pass
 
     # pylint: enable=arguments-differ
 
@@ -842,12 +810,7 @@ class AppendRow(Row):
                       the targeted cell is unset, it will be treated as
                       containing the empty string.
         """
-        column = _to_bytes(column)
-        value = _to_bytes(value)
-        rule_pb = data_v2_pb2.ReadModifyWriteRule(
-            family_name=column_family_id, column_qualifier=column, append_value=value
-        )
-        self._rule_pb_list.append(rule_pb)
+        pass
 
     def increment_cell_value(self, column_family_id, column, int_value):
         """Increments a value in an existing cell.
@@ -1055,12 +1018,7 @@ class PartialRowData(object):
         :rtype: dict
         :returns: Dictionary containing all the data in the cells of this row.
         """
-        result = {}
-        for column_family_id, columns in self._cells.items():
-            for column_qual, cells in columns.items():
-                key = _to_bytes(column_family_id) + b":" + _to_bytes(column_qual)
-                result[key] = cells
-        return result
+        pass
 
     @property
     def cells(self):
@@ -1079,7 +1037,7 @@ class PartialRowData(object):
                   and second for column names/qualifiers within a family). For
                   a given column, a list of :class:`Cell` objects is stored.
         """
-        return self._cells
+        pass
 
     @property
     def row_key(self):
@@ -1088,7 +1046,7 @@ class PartialRowData(object):
         :rtype: bytes
         :returns: The current (partial) row's key.
         """
-        return self._row_key
+        pass
 
     def find_cells(self, column_family_id, column):
         """Get a time series of cells stored on this instance.
@@ -1116,17 +1074,7 @@ class PartialRowData(object):
             KeyError: If ``column`` is not among the cells stored in this row
                 for the given ``column_family_id``.
         """
-        try:
-            column_family = self._cells[column_family_id]
-        except KeyError:
-            raise KeyError(_MISSING_COLUMN_FAMILY.format(column_family_id))
-
-        try:
-            cells = column_family[column]
-        except KeyError:
-            raise KeyError(_MISSING_COLUMN.format(column, column_family_id))
-
-        return cells
+        pass
 
     def cell_value(self, column_family_id, column, index=0):
         """Get a single cell value stored on this instance.
@@ -1159,16 +1107,7 @@ class PartialRowData(object):
                 in this row for the given ``column_family_id``, ``column``
                 pair.
         """
-        cells = self.find_cells(column_family_id, column)
-
-        try:
-            cell = cells[index]
-        except (TypeError, IndexError):
-            num_cells = len(cells)
-            msg = _MISSING_INDEX.format(index, column, column_family_id, num_cells)
-            raise IndexError(msg)
-
-        return cell.value
+        pass
 
     def cell_values(self, column_family_id, column, max_count=None):
         """Get a time series of cells stored on this instance.
@@ -1197,15 +1136,7 @@ class PartialRowData(object):
             KeyError: If ``column`` is not among the cells stored in this row
                 for the given ``column_family_id``.
         """
-        cells = self.find_cells(column_family_id, column)
-        if max_count is None:
-            max_count = len(cells)
-
-        for index, cell in enumerate(cells):
-            if index == max_count:
-                break
-
-            yield cell.value, cell.timestamp_micros
+        pass
 
 
 class Cell(object):

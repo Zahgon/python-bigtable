@@ -50,7 +50,7 @@ class Status:
         :rypte: str
         :returns: The status message.
         """
-        return self.status_pb.message
+        pass
 
     def __repr__(self):
         return repr(self.status_pb)

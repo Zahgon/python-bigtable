@@ -50,15 +50,11 @@ class _NamedList(Generic[T]):
                 self.add_field(field_name, field_type)
 
     def add_field(self, name: Optional[str], value: T):
-        if name:
-            if name in self._field_indexes:
-                self._duplicate_names.add(name)
-            self._field_indexes[name].append(len(self._fields))
-        self._fields.append((name, value))
+        pass
 
     @property
     def fields(self):
-        return self._fields
+        pass
 
     def __getitem__(self, index_or_name: Union[str, int]):
         if isinstance(index_or_name, str):

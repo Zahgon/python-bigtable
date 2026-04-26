@@ -126,7 +126,7 @@ class SqlType:
 
         @property
         def element_type(self):
-            return self._element_type
+            pass
 
         @classmethod
         def from_pb_type(cls, type_pb: Optional[PBType] = None) -> "SqlType.Array":
@@ -166,11 +166,11 @@ class SqlType:
 
         @property
         def key_type(self):
-            return self._key_type
+            pass
 
         @property
         def value_type(self):
-            return self._value_type
+            pass
 
         @classmethod
         def from_pb_type(cls, type_pb: Optional[PBType] = None) -> "SqlType.Map":
@@ -336,15 +336,15 @@ class Metadata:
 
         @property
         def column_name(self) -> Optional[str]:
-            return self._column_name
+            pass
 
         @property
         def column_type(self) -> SqlType.Type:
-            return self._column_type
+            pass
 
     @property
     def columns(self) -> List[Column]:
-        return self._columns
+        pass
 
     def __init__(
         self, columns: Optional[List[Tuple[Optional[str], SqlType.Type]]] = None

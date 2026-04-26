@@ -109,8 +109,7 @@ class RowSet(object):
         :param end_inclusive: (Optional) Whether the ``end_key`` should be
                   considered inclusive. The default is False (exclusive).
         """
-        row_range = RowRange(start_key, end_key, start_inclusive, end_inclusive)
-        self.row_ranges.append(row_range)
+        pass
 
     def add_row_range_with_prefix(self, row_key_prefix):
         """Add row range to row_ranges list that start with the row_key_prefix from the row keys
@@ -124,11 +123,7 @@ class RowSet(object):
         :type row_key_prefix: str
         :param row_key_prefix: To retrieve  all rows that start with this row key prefix.
                             Prefix cannot be zero length."""
-
-        end_key = row_key_prefix[:-1] + chr(ord(row_key_prefix[-1]) + 1)
-        self.add_row_range_from_keys(
-            row_key_prefix.encode("utf-8"), end_key.encode("utf-8")
-        )
+        pass
 
     def _update_message_request(self, message):
         """Add row keys and row range to given request message
@@ -181,7 +176,7 @@ class RowRange(object):
         Returns:
             Tuple[str]: The contents of this :class:`.RowRange`.
         """
-        return (self.start_key, self.start_inclusive, self.end_key, self.end_inclusive)
+        pass
 
     def __hash__(self):
         return hash(self._key())

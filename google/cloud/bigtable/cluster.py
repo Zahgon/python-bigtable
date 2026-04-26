@@ -230,9 +230,7 @@ class Cluster(object):
         :rtype: str
         :returns: The cluster name.
         """
-        return self._instance._client.instance_admin_client.cluster_path(
-            self._instance._client.project, self._instance.instance_id, self.cluster_id
-        )
+        pass
 
     @property
     def state(self):
@@ -246,12 +244,12 @@ class Cluster(object):
             :dedent: 4
 
         """
-        return self._state
+        pass
 
     @property
     def kms_key_name(self):
         """str: Customer managed encryption key for the cluster."""
-        return self._kms_key_name
+        pass
 
     def _validate_scaling_config(self):
         """Validate auto/manual scaling configuration before creating or updating."""
@@ -459,24 +457,7 @@ class Cluster(object):
         :type serve_nodes: int
         :param serve_nodes: The number of nodes in the cluster.
         """
-
-        client = self._instance._client
-
-        update_mask_pb = field_mask_pb2.FieldMask()
-
-        self.serve_nodes = serve_nodes
-        self.min_serve_nodes = 0
-        self.max_serve_nodes = 0
-        self.cpu_utilization_percent = 0
-
-        update_mask_pb.paths.append("serve_nodes")
-        update_mask_pb.paths.append("cluster_config.cluster_autoscaling_config")
-        cluster_pb = self._to_pb()
-        cluster_pb.name = self.name
-
-        return client.instance_admin_client.partial_update_cluster(
-            request={"cluster": cluster_pb, "update_mask": update_mask_pb}
-        )
+        pass
 
     def delete(self):
         """Delete this cluster.

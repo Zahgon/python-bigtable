@@ -31,19 +31,19 @@ class _WrappedChannel(Channel):
         self._channel = channel
 
     def unary_unary(self, *args, **kwargs):
-        return self._channel.unary_unary(*args, **kwargs)
+        pass
 
     def unary_stream(self, *args, **kwargs):
-        return self._channel.unary_stream(*args, **kwargs)
+        pass
 
     def stream_unary(self, *args, **kwargs):
-        return self._channel.stream_unary(*args, **kwargs)
+        pass
 
     def stream_stream(self, *args, **kwargs):
-        return self._channel.stream_stream(*args, **kwargs)
+        pass
 
     def channel_ready(self):
-        return self._channel.channel_ready()
+        pass
 
     def __enter__(self):
         self._channel.__enter__()
@@ -53,10 +53,10 @@ class _WrappedChannel(Channel):
         return self._channel.__exit__(exc_type, exc_val, exc_tb)
 
     def get_state(self, try_to_connect: bool = False) -> ChannelConnectivity:
-        return self._channel.get_state(try_to_connect=try_to_connect)
+        pass
 
     def wait_for_state_change(self, last_observed_state):
-        return self._channel.wait_for_state_change(last_observed_state)
+        pass
 
     def __getattr__(self, name):
         return getattr(self._channel, name)
@@ -65,10 +65,10 @@ class _WrappedChannel(Channel):
         return self._channel.close()
 
     def subscribe(self, callback, try_to_connect=False):
-        return self._channel.subscribe(callback, try_to_connect)
+        pass
 
     def unsubscribe(self, callback):
-        return self._channel.unsubscribe(callback)
+        pass
 
 
 class SwappableChannel(_WrappedChannel):
@@ -86,11 +86,8 @@ class SwappableChannel(_WrappedChannel):
 
     def create_channel(self) -> Channel:
         """Create a fresh channel using the stored `channel_fn` partial"""
-        new_channel = self._channel_fn()
-        return new_channel
+        pass
 
     def swap_channel(self, new_channel: Channel) -> Channel:
         """Replace the wrapped channel with a new instance. Typically created using `create_channel`"""
-        old_channel = self._channel
-        self._channel = new_channel
-        return old_channel
+        pass

@@ -282,9 +282,7 @@ class TrackedBackoffGenerator:
         Raises:
             ValueError: if next_value is negative
         """
-        if next_value < 0:
-            raise ValueError("backoff value cannot be less than 0")
-        self._next_override = next_value
+        pass
 
     def __next__(self) -> float:
         if self._next_override is not None:

@@ -394,7 +394,7 @@ class ActiveOperationMetric:
 
         Causes on_operation_completed to be called for each registered handler.
         """
-        return self.end_with_status(StatusCode.OK)
+        pass
 
     @staticmethod
     def _exc_to_status(exc: BaseException) -> StatusCode:

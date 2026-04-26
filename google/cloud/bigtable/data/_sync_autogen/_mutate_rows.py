@@ -128,43 +128,7 @@ class _MutateRowsOperation:
             _MutateRowsIncomplete: if there are failed mutations eligible for
                 retry after the attempt is complete
             GoogleAPICallError: if the gapic rpc fails"""
-        request_entries = [self.mutations[idx].proto for idx in self.remaining_indices]
-        active_request_indices = {
-            req_idx: orig_idx
-            for (req_idx, orig_idx) in enumerate(self.remaining_indices)
-        }
-        self.remaining_indices = []
-        if not request_entries:
-            return
-        try:
-            result_generator = self._gapic_fn(
-                request=types_pb.MutateRowsRequest(
-                    entries=request_entries,
-                    app_profile_id=self._target.app_profile_id,
-                    **self._target._request_path,
-                ),
-                timeout=next(self.timeout_generator),
-                retry=None,
-            )
-            for result_list in result_generator:
-                for result in result_list.entries:
-                    orig_idx = active_request_indices[result.index]
-                    entry_error = core_exceptions.from_grpc_status(
-                        result.status.code,
-                        result.status.message,
-                        details=result.status.details,
-                    )
-                    if result.status.code != 0:
-                        self._handle_entry_error(orig_idx, entry_error)
-                    elif orig_idx in self.errors:
-                        del self.errors[orig_idx]
-                    del active_request_indices[result.index]
-        except Exception as exc:
-            for idx in active_request_indices.values():
-                self._handle_entry_error(idx, exc)
-            raise
-        if self.remaining_indices:
-            raise bt_exceptions._MutateRowsIncomplete
+        pass
 
     def _handle_entry_error(self, idx: int, exc: Exception):
         """Add an exception to the list of exceptions for a given mutation index,

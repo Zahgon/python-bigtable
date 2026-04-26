@@ -99,7 +99,7 @@ class AstDecorator:
         Returns:
             transformed ast node, or None if the node should be dropped
         """
-        return wrapped_node
+        pass
 
     @classmethod
     def get_for_node(cls, node: ast.Call | ast.Attribute | ast.Name) -> "AstDecorator":
@@ -118,34 +118,7 @@ class AstDecorator:
         Raises:
             ValueError: if the decorator cannot be parsed
         """
-        import ast
-
-        # expect decorators in format @CrossSync.<decorator_name>
-        # (i.e. should be an ast.Call or an ast.Attribute)
-        root_attr = node.func if isinstance(node, ast.Call) else node
-        if not isinstance(root_attr, ast.Attribute):
-            raise ValueError("Unexpected decorator format")
-        # extract the module and decorator names
-        if "CrossSync" in ast.dump(root_attr):
-            decorator_name = root_attr.attr
-            got_kwargs: dict[str, Any] = (
-                {str(kw.arg): cls._convert_ast_to_py(kw.value) for kw in node.keywords}
-                if hasattr(node, "keywords")
-                else {}
-            )
-            got_args = (
-                [cls._convert_ast_to_py(arg) for arg in node.args]
-                if hasattr(node, "args")
-                else []
-            )
-            # convert to standardized representation
-            formatted_name = decorator_name.replace("_", "").lower()
-            for subclass in cls.get_subclasses():
-                if subclass.__name__.lower() == formatted_name:
-                    return subclass(*got_args, **got_kwargs)
-            raise ValueError(f"Unknown decorator encountered: {decorator_name}")
-        else:
-            raise ValueError("Not a CrossSync decorator")
+        pass
 
     @classmethod
     def get_subclasses(cls) -> Iterable[type["AstDecorator"]]:
@@ -155,32 +128,14 @@ class AstDecorator:
         Returns:
             list of all subclasses of AstDecorator
         """
-        for subclass in cls.__subclasses__():
-            yield from subclass.get_subclasses()
-            yield subclass
+        pass
 
     @classmethod
     def _convert_ast_to_py(cls, ast_node: ast.expr | None) -> Any:
         """
         Helper to convert ast primitives to python primitives. Used when unwrapping arguments
         """
-        import ast
-
-        if ast_node is None:
-            return None
-        if isinstance(ast_node, ast.Constant):
-            return ast_node.value
-        if isinstance(ast_node, ast.List):
-            return [cls._convert_ast_to_py(node) for node in ast_node.elts]
-        if isinstance(ast_node, ast.Tuple):
-            return tuple(cls._convert_ast_to_py(node) for node in ast_node.elts)
-        if isinstance(ast_node, ast.Dict):
-            return {
-                cls._convert_ast_to_py(k): cls._convert_ast_to_py(v)
-                for k, v in zip(ast_node.keys, ast_node.values)
-            }
-        # unsupported node type
-        return ast_node
+        pass
 
 
 class ConvertClass(AstDecorator):
@@ -243,52 +198,7 @@ class ConvertClass(AstDecorator):
         """
         Transform async class into sync copy
         """
-        import ast
-        import copy
-
-        # copy wrapped node
-        wrapped_node = copy.deepcopy(wrapped_node)
-        # update name
-        if self.sync_name:
-            wrapped_node.name = self.sync_name
-        # strip CrossSync decorators
-        if hasattr(wrapped_node, "decorator_list"):
-            wrapped_node.decorator_list = [
-                d for d in wrapped_node.decorator_list if "CrossSync" not in ast.dump(d)
-            ]
-        else:
-            wrapped_node.decorator_list = []
-        # strip async keywords if specified
-        if self.rm_aio:
-            wrapped_node = transformers_globals["AsyncToSync"]().visit(wrapped_node)
-        # add mapping decorator if needed
-        if self.add_mapping_for_name:
-            wrapped_node.decorator_list.append(
-                ast.Call(
-                    func=ast.Attribute(
-                        value=ast.Name(id="CrossSync", ctx=ast.Load()),
-                        attr="add_mapping_decorator",
-                        ctx=ast.Load(),
-                    ),
-                    args=[
-                        ast.Constant(value=self.add_mapping_for_name),
-                    ],
-                    keywords=[],
-                )
-            )
-        # replace symbols if specified
-        if self.replace_symbols:
-            wrapped_node = transformers_globals["SymbolReplacer"](
-                self.replace_symbols
-            ).visit(wrapped_node)
-        # update docstring if specified
-        if self.sync_docstring_format_vars:
-            docstring = ast.get_docstring(wrapped_node)
-            if docstring:
-                wrapped_node.body[0].value = ast.Constant(
-                    value=docstring.format(**self.sync_docstring_format_vars)
-                )
-        return wrapped_node
+        pass
 
 
 class Convert(ConvertClass):
@@ -324,23 +234,7 @@ class Convert(ConvertClass):
         """
         Transform async method into sync
         """
-        import ast
-
-        # replace async function with sync function
-        converted = ast.copy_location(
-            ast.FunctionDef(
-                wrapped_node.name,
-                wrapped_node.args,
-                wrapped_node.body,
-                wrapped_node.decorator_list
-                if hasattr(wrapped_node, "decorator_list")
-                else [],
-                wrapped_node.returns if hasattr(wrapped_node, "returns") else None,
-            ),
-            wrapped_node,
-        )
-        # transform based on arguments
-        return super().sync_ast_transform(converted, transformers_globals)
+        pass
 
 
 class Drop(AstDecorator):
@@ -352,7 +246,7 @@ class Drop(AstDecorator):
         """
         Drop from sync output
         """
-        return None
+        pass
 
 
 class Pytest(AstDecorator):
@@ -379,25 +273,7 @@ class Pytest(AstDecorator):
         """
         convert async to sync
         """
-        import ast
-
-        # always convert method to sync
-        converted = ast.copy_location(
-            ast.FunctionDef(
-                wrapped_node.name,
-                wrapped_node.args,
-                wrapped_node.body,
-                wrapped_node.decorator_list
-                if hasattr(wrapped_node, "decorator_list")
-                else [],
-                wrapped_node.returns if hasattr(wrapped_node, "returns") else None,
-            ),
-            wrapped_node,
-        )
-        # convert entire body to sync if rm_aio is set
-        if self.rm_aio:
-            converted = transformers_globals["AsyncToSync"]().visit(converted)
-        return converted
+        pass
 
 
 class PytestFixture(AstDecorator):
@@ -419,30 +295,4 @@ class PytestFixture(AstDecorator):
         return lambda f: pytest_asyncio.fixture(*self._args, **self._kwargs)(f)
 
     def sync_ast_transform(self, wrapped_node, transformers_globals):
-        import ast
-        import copy
-
-        arg_nodes = [
-            a if isinstance(a, ast.expr) else ast.Constant(value=a) for a in self._args
-        ]
-        kwarg_nodes = []
-        for k, v in self._kwargs.items():
-            if not isinstance(v, ast.expr):
-                v = ast.Constant(value=v)
-            kwarg_nodes.append(ast.keyword(arg=k, value=v))
-
-        new_node = copy.deepcopy(wrapped_node)
-        if not hasattr(new_node, "decorator_list"):
-            new_node.decorator_list = []
-        new_node.decorator_list.append(
-            ast.Call(
-                func=ast.Attribute(
-                    value=ast.Name(id="pytest", ctx=ast.Load()),
-                    attr="fixture",
-                    ctx=ast.Load(),
-                ),
-                args=arg_nodes,
-                keywords=kwarg_nodes,
-            )
-        )
-        return new_node
+        pass

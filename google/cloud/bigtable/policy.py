@@ -108,10 +108,7 @@ class Policy(BasePolicy):
             :end-before: [END bigtable_api_admins_policy]
             :dedent: 4
         """
-        result = set()
-        for member in self.get(BIGTABLE_ADMIN_ROLE, ()):
-            result.add(member)
-        return frozenset(result)
+        pass
 
     @property
     def bigtable_readers(self):
@@ -126,10 +123,7 @@ class Policy(BasePolicy):
             :end-before: [END bigtable_api_readers_policy]
             :dedent: 4
         """
-        result = set()
-        for member in self.get(BIGTABLE_READER_ROLE, ()):
-            result.add(member)
-        return frozenset(result)
+        pass
 
     @property
     def bigtable_users(self):
@@ -144,10 +138,7 @@ class Policy(BasePolicy):
             :end-before: [END bigtable_api_users_policy]
             :dedent: 4
         """
-        result = set()
-        for member in self.get(BIGTABLE_USER_ROLE, ()):
-            result.add(member)
-        return frozenset(result)
+        pass
 
     @property
     def bigtable_viewers(self):
@@ -162,10 +153,7 @@ class Policy(BasePolicy):
             :end-before: [END bigtable_api_viewers_policy]
             :dedent: 4
         """
-        result = set()
-        for member in self.get(BIGTABLE_VIEWER_ROLE, ()):
-            result.add(member)
-        return frozenset(result)
+        pass
 
     @classmethod
     def from_pb(cls, policy_pb):
@@ -229,13 +217,7 @@ class Policy(BasePolicy):
         Returns:
             :class:`Policy`: the parsed policy
         """
-        etag = resource.get("etag")
-
-        if etag is not None:
-            resource = resource.copy()
-            resource["etag"] = base64.b64decode(etag.encode("ascii"))
-
-        return super(Policy, cls).from_api_repr(resource)
+        pass
 
     def to_api_repr(self):
         """Render a JSON policy resource.
@@ -247,9 +229,4 @@ class Policy(BasePolicy):
             dict: a JSON resource to be passed to the
             ``setIamPolicy`` REST API.
         """
-        resource = super(Policy, self).to_api_repr()
-
-        if self.etag is not None:
-            resource["etag"] = base64.b64encode(self.etag).decode("ascii")
-
-        return resource
+        pass

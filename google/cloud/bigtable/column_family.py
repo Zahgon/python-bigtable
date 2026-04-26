@@ -231,7 +231,7 @@ class ColumnFamily(object):
         :rtype: str
         :returns: The column family name.
         """
-        return self._table.name + "/columnFamilies/" + self.column_family_id
+        pass
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):

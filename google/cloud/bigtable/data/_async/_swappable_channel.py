@@ -39,19 +39,19 @@ class _AsyncWrappedChannel(Channel):
         self._channel = channel
 
     def unary_unary(self, *args, **kwargs):
-        return self._channel.unary_unary(*args, **kwargs)
+        pass
 
     def unary_stream(self, *args, **kwargs):
-        return self._channel.unary_stream(*args, **kwargs)
+        pass
 
     def stream_unary(self, *args, **kwargs):
-        return self._channel.stream_unary(*args, **kwargs)
+        pass
 
     def stream_stream(self, *args, **kwargs):
-        return self._channel.stream_stream(*args, **kwargs)
+        pass
 
     async def channel_ready(self):
-        return await self._channel.channel_ready()
+        pass
 
     @CrossSync.convert(
         sync_name="__enter__", replace_symbols={"__aenter__": "__enter__"}
@@ -65,10 +65,10 @@ class _AsyncWrappedChannel(Channel):
         return await self._channel.__aexit__(exc_type, exc_val, exc_tb)
 
     def get_state(self, try_to_connect: bool = False) -> ChannelConnectivity:
-        return self._channel.get_state(try_to_connect=try_to_connect)
+        pass
 
     async def wait_for_state_change(self, last_observed_state):
-        return await self._channel.wait_for_state_change(last_observed_state)
+        pass
 
     def __getattr__(self, name):
         return getattr(self._channel, name)
@@ -84,10 +84,10 @@ class _AsyncWrappedChannel(Channel):
         # add required sync methods
 
         def subscribe(self, callback, try_to_connect=False):
-            return self._channel.subscribe(callback, try_to_connect)
+            pass
 
         def unsubscribe(self, callback):
-            return self._channel.unsubscribe(callback)
+            pass
 
 
 @CrossSync.convert_class(
@@ -111,29 +111,10 @@ class AsyncSwappableChannel(_AsyncWrappedChannel):
         """
         Create a fresh channel using the stored `channel_fn` partial
         """
-        new_channel = self._channel_fn()
-        if CrossSync.is_async:
-            # copy over interceptors
-            # this is needed because of how gapic attaches the LoggingClientAIOInterceptor
-            # sync channels add interceptors by wrapping, so this step isn't needed
-            new_channel._unary_unary_interceptors = (
-                self._channel._unary_unary_interceptors
-            )
-            new_channel._unary_stream_interceptors = (
-                self._channel._unary_stream_interceptors
-            )
-            new_channel._stream_unary_interceptors = (
-                self._channel._stream_unary_interceptors
-            )
-            new_channel._stream_stream_interceptors = (
-                self._channel._stream_stream_interceptors
-            )
-        return new_channel
+        pass
 
     def swap_channel(self, new_channel: Channel) -> Channel:
         """
         Replace the wrapped channel with a new instance. Typically created using `create_channel`
         """
-        old_channel = self._channel
-        self._channel = new_channel
-        return old_channel
+        pass

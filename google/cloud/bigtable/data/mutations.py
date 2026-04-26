@@ -100,44 +100,7 @@ class Mutation(ABC):
         Raises:
             ValueError: If the input dictionary is invalid or does not represent a valid mutation type.
         """
-        instance: Mutation | None = None
-        try:
-            if "set_cell" in input_dict:
-                details = input_dict["set_cell"]
-                instance = SetCell(
-                    details["family_name"],
-                    details["column_qualifier"],
-                    details["value"],
-                    details["timestamp_micros"],
-                )
-            elif "delete_from_column" in input_dict:
-                details = input_dict["delete_from_column"]
-                time_range = details.get("time_range", {})
-                start = time_range.get("start_timestamp_micros", None)
-                end = time_range.get("end_timestamp_micros", None)
-                instance = DeleteRangeFromColumn(
-                    details["family_name"], details["column_qualifier"], start, end
-                )
-            elif "delete_from_family" in input_dict:
-                details = input_dict["delete_from_family"]
-                instance = DeleteAllFromFamily(details["family_name"])
-            elif "delete_from_row" in input_dict:
-                instance = DeleteAllFromRow()
-            elif "add_to_cell" in input_dict:
-                details = input_dict["add_to_cell"]
-                instance = AddToCell(
-                    details["family_name"],
-                    details["column_qualifier"]["raw_value"],
-                    details["input"]["int_value"],
-                    details["timestamp"]["raw_timestamp_micros"],
-                )
-        except KeyError as e:
-            raise ValueError("Invalid mutation dictionary") from e
-        if instance is None:
-            raise ValueError("No valid mutation found")
-        if not issubclass(instance.__class__, cls):
-            raise ValueError("Mutation type mismatch")
-        return instance
+        pass
 
 
 class SetCell(Mutation):
@@ -437,12 +400,7 @@ class RowMutationEntry:
         Returns:
             RowMutationEntry: A RowMutationEntry instance created from the dictionary.
         """
-        return RowMutationEntry(
-            row_key=input_dict["row_key"],
-            mutations=[
-                Mutation._from_dict(mutation) for mutation in input_dict["mutations"]
-            ],
-        )
+        pass
 
 
 @dataclass

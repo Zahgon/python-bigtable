@@ -191,9 +191,7 @@ class Instance(object):
         :rtype: str
         :returns: Return a fully-qualified instance string.
         """
-        return self._client.instance_admin_client.instance_path(
-            project=self._client.project, instance=self.instance_id
-        )
+        pass
 
     @property
     def state(self):
@@ -207,7 +205,7 @@ class Instance(object):
             :dedent: 4
 
         """
-        return self._state
+        pass
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -482,16 +480,7 @@ class Instance(object):
         :rtype: :class:`google.cloud.bigtable.policy.Policy`
         :returns: The current IAM policy of this instance
         """
-        args = {"resource": self.name}
-        if requested_policy_version is not None:
-            args["options_"] = options_pb2.GetPolicyOptions(
-                requested_policy_version=requested_policy_version
-            )
-
-        instance_admin_client = self._client.instance_admin_client
-
-        resp = instance_admin_client.get_iam_policy(request=args)
-        return Policy.from_pb(resp)
+        pass
 
     def set_iam_policy(self, policy):
         """Sets the access control policy on an instance resource. Replaces any
@@ -514,11 +503,7 @@ class Instance(object):
         :rtype: :class:`google.cloud.bigtable.policy.Policy`
         :returns: The current IAM policy of this instance.
         """
-        instance_admin_client = self._client.instance_admin_client
-        resp = instance_admin_client.set_iam_policy(
-            request={"resource": self.name, "policy": policy.to_pb()}
-        )
-        return Policy.from_pb(resp)
+        pass
 
     def test_iam_permissions(self, permissions):
         """Returns permissions that the caller has on the specified instance
@@ -543,11 +528,7 @@ class Instance(object):
         :rtype: list
         :returns: A List(string) of permissions allowed on the instance
         """
-        instance_admin_client = self._client.instance_admin_client
-        resp = instance_admin_client.test_iam_permissions(
-            request={"resource": self.name, "permissions": permissions}
-        )
-        return list(resp.permissions)
+        pass
 
     def cluster(
         self,
@@ -757,15 +738,7 @@ class Instance(object):
         :rtype: :class:`~google.cloud.bigtable.app_profile.AppProfile>`
         :returns: AppProfile for this instance.
         """
-        return AppProfile(
-            app_profile_id,
-            self,
-            routing_policy_type=routing_policy_type,
-            description=description,
-            cluster_id=cluster_id,
-            multi_cluster_ids=multi_cluster_ids,
-            allow_transactional_writes=allow_transactional_writes,
-        )
+        pass
 
     def list_app_profiles(self):
         """Lists information about AppProfiles in an instance.
@@ -783,7 +756,4 @@ class Instance(object):
                   :class:`~google.cloud.bigtable.app_profile.AppProfile`
                   instances.
         """
-        resp = self._client.instance_admin_client.list_app_profiles(
-            request={"parent": self.name}
-        )
-        return [AppProfile.from_pb(app_profile, self) for app_profile in resp]
+        pass

@@ -45,7 +45,7 @@ class BigtableClientSideMetricsController:
         Args:
           - handler: A MetricsHandler object to add to the list of subscribed handlers.
         """
-        self.handlers.append(handler)
+        pass
 
     def create_operation(
         self, op_type: OperationType, **kwargs
@@ -53,7 +53,7 @@ class BigtableClientSideMetricsController:
         """
         Creates a new operation and registers it with the subscribed handlers.
         """
-        return ActiveOperationMetric(op_type, **kwargs, handlers=self.handlers)
+        pass
 
     def close(self):
         """

@@ -82,11 +82,7 @@ class _FlowControl:
         Returns:
             bool: True if there is capacity to send the pending entry, False otherwise
         """
-        acceptable_size = max(self._max_mutation_bytes, additional_size)
-        acceptable_count = max(self._max_mutation_count, additional_count)
-        new_size = self._in_flight_mutation_bytes + additional_size
-        new_count = self._in_flight_mutation_count + additional_count
-        return new_size <= acceptable_size and new_count <= acceptable_count
+        pass
 
     def remove_from_flow(
         self, mutations: RowMutationEntry | list[RowMutationEntry]
@@ -97,14 +93,7 @@ class _FlowControl:
 
         Args:
             mutations: mutation or list of mutations to remove from flow control"""
-        if not isinstance(mutations, list):
-            mutations = [mutations]
-        total_count = sum((len(entry.mutations) for entry in mutations))
-        total_size = sum((entry.size() for entry in mutations))
-        self._in_flight_mutation_count -= total_count
-        self._in_flight_mutation_bytes -= total_size
-        with self._capacity_condition:
-            self._capacity_condition.notify_all()
+        pass
 
     def add_to_flow(self, mutations: RowMutationEntry | list[RowMutationEntry]):
         """Generator function that registers mutations with flow control. As mutations
@@ -118,34 +107,7 @@ class _FlowControl:
             list[RowMutationEntry]:
                 list of mutations that have reserved space in the flow control.
                 Each batch contains at least one mutation."""
-        if not isinstance(mutations, list):
-            mutations = [mutations]
-        start_idx = 0
-        end_idx = 0
-        while end_idx < len(mutations):
-            start_idx = end_idx
-            batch_mutation_count = 0
-            with self._capacity_condition:
-                while end_idx < len(mutations):
-                    next_entry = mutations[end_idx]
-                    next_size = next_entry.size()
-                    next_count = len(next_entry.mutations)
-                    if (
-                        self._has_capacity(next_count, next_size)
-                        and batch_mutation_count + next_count
-                        <= _MUTATE_ROWS_REQUEST_MUTATION_LIMIT
-                    ):
-                        end_idx += 1
-                        batch_mutation_count += next_count
-                        self._in_flight_mutation_bytes += next_size
-                        self._in_flight_mutation_count += next_count
-                    elif start_idx != end_idx:
-                        break
-                    else:
-                        self._capacity_condition.wait_for(
-                            lambda: self._has_capacity(next_count, next_size)
-                        )
-            yield mutations[start_idx:end_idx]
+        pass
 
 
 class MutationsBatcher:
@@ -243,14 +205,7 @@ class MutationsBatcher:
         Args:
             flush_interval: Automatically flush every flush_interval seconds.
                 If None, no time-based flushing is performed."""
-        if not interval or interval <= 0:
-            return None
-        while not self._closed.is_set():
-            CrossSync._Sync_Impl.event_wait(
-                self._closed, timeout=interval, async_break_early=False
-            )
-            if not self._closed.is_set() and self._staged_entries:
-                self._schedule_flush()
+        pass
 
     def append(self, mutation_entry: RowMutationEntry):
         """Add a new set of mutations to the internal queue
@@ -299,17 +254,7 @@ class MutationsBatcher:
 
         Args:
             new_entries list of RowMutationEntry objects to flush"""
-        in_process_requests: list[
-            CrossSync._Sync_Impl.Future[list[FailedMutationEntryError]]
-        ] = []
-        for batch in self._flow_control.add_to_flow(new_entries):
-            batch_task = CrossSync._Sync_Impl.create_task(
-                self._execute_mutate_rows, batch, sync_executor=self._sync_rpc_executor
-            )
-            in_process_requests.append(batch_task)
-        found_exceptions = self._wait_for_batch_results(*in_process_requests)
-        self._entries_processed_since_last_raise += len(new_entries)
-        self._add_exceptions(found_exceptions)
+        pass
 
     def _execute_mutate_rows(
         self, batch: list[RowMutationEntry]
@@ -324,23 +269,7 @@ class MutationsBatcher:
             list[FailedMutationEntryError]:
                 list of FailedMutationEntryError objects for mutations that failed.
                 FailedMutationEntryError objects will not contain index information"""
-        try:
-            operation = CrossSync._Sync_Impl._MutateRowsOperation(
-                self._target.client._gapic_client,
-                self._target,
-                batch,
-                operation_timeout=self._operation_timeout,
-                attempt_timeout=self._attempt_timeout,
-                retryable_exceptions=self._retryable_errors,
-            )
-            operation.start()
-        except MutationsExceptionGroup as e:
-            for subexc in e.exceptions:
-                subexc.index = None
-            return list(e.exceptions)
-        finally:
-            self._flow_control.remove_from_flow(batch)
-        return []
+        pass
 
     def _add_exceptions(self, excs: list[Exception]):
         """Add new list of exceptions to internal store. To avoid unbounded memory,
@@ -349,13 +278,7 @@ class MutationsBatcher:
 
         Args:
             excs: list of exceptions to add to the internal store"""
-        self._exceptions_since_last_raise += len(excs)
-        if excs and len(self._oldest_exceptions) < self._exception_list_limit:
-            addition_count = self._exception_list_limit - len(self._oldest_exceptions)
-            self._oldest_exceptions.extend(excs[:addition_count])
-            excs = excs[addition_count:]
-        if excs:
-            self._newest_exceptions.extend(excs[-self._exception_list_limit :])
+        pass
 
     def _raise_exceptions(self):
         """Raise any unreported exceptions from background flush operations
@@ -395,7 +318,7 @@ class MutationsBatcher:
     def closed(self) -> bool:
         """Returns:
         - True if the batcher is closed, False otherwise"""
-        return self._closed.is_set()
+        pass
 
     def close(self):
         """Flush queue and clean up resources"""
@@ -414,10 +337,7 @@ class MutationsBatcher:
 
     def _on_exit(self):
         """Called when program is exited. Raises warning if unflushed mutations remain"""
-        if not self._closed.is_set() and self._staged_entries:
-            warnings.warn(
-                f"MutationsBatcher for target {self._target!r} was not closed. {len(self._staged_entries)} Unflushed mutations will not be sent to the server."
-            )
+        pass
 
     @staticmethod
     def _wait_for_batch_results(
@@ -436,16 +356,4 @@ class MutationsBatcher:
                 If a task fails with a different exception, it will be included in the
                 output list. Successful tasks will not be represented in the output list.
         """
-        if not tasks:
-            return []
-        exceptions: list[Exception] = []
-        for task in tasks:
-            try:
-                exc_list = task.result()
-                if exc_list:
-                    for exc in exc_list:
-                        exc.index = None
-                    exceptions.extend(exc_list)
-            except Exception as e:
-                exceptions.append(e)
-        return exceptions
+        pass

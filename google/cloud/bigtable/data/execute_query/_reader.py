@@ -93,8 +93,7 @@ class _QueryResultRowReader(_Reader[QueryResultRow]):
     """
 
     def _parse_proto_rows(self, bytes_to_parse: bytes) -> Iterable[PBValue]:
-        proto_rows = ProtoRows.pb().FromString(bytes_to_parse)
-        return proto_rows.values
+        pass
 
     def _construct_query_result_row(
         self,
@@ -102,19 +101,7 @@ class _QueryResultRowReader(_Reader[QueryResultRow]):
         metadata: Metadata,
         column_info: dict[str, Message | EnumTypeWrapper] | None = None,
     ) -> QueryResultRow:
-        result = QueryResultRow()
-        columns = metadata.columns
-
-        assert len(values) == len(
-            columns
-        ), "This function should be called only when count of values matches count of columns."
-
-        for column, value in zip(columns, values):
-            parsed_value = _parse_pb_value_to_python_value(
-                value, column.column_type, column.column_name, column_info
-            )
-            result.add_field(column.column_name, parsed_value)
-        return result
+        pass
 
     def consume(
         self,
@@ -122,21 +109,4 @@ class _QueryResultRowReader(_Reader[QueryResultRow]):
         metadata: Metadata,
         column_info: dict[str, Message | EnumTypeWrapper] | None = None,
     ) -> Optional[Iterable[QueryResultRow]]:
-        num_columns = len(metadata.columns)
-        rows = []
-        for batch_bytes in batches_to_consume:
-            values = self._parse_proto_rows(batch_bytes)
-            for row_data in batched(values, n=num_columns):
-                if len(row_data) == num_columns:
-                    rows.append(
-                        self._construct_query_result_row(
-                            row_data, metadata, column_info
-                        )
-                    )
-                else:
-                    raise ValueError(
-                        "Unexpected error, recieved bad number of values. "
-                        f"Expected {num_columns} got {len(row_data)}."
-                    )
-
-        return rows
+        pass

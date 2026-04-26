@@ -155,12 +155,7 @@ class Table(object):
         :rtype: str
         :returns: The table name.
         """
-        project = self._instance._client.project
-        instance_id = self._instance.instance_id
-        table_client = self._instance._client.table_data_client
-        return table_client.table_path(
-            project=project, instance=instance_id, table=self.table_id
-        )
+        pass
 
     def get_iam_policy(self):
         """Gets the IAM access control policy for this table.
@@ -175,9 +170,7 @@ class Table(object):
         :rtype: :class:`google.cloud.bigtable.policy.Policy`
         :returns: The current IAM policy of this table.
         """
-        table_client = self._instance._client.table_admin_client
-        resp = table_client.get_iam_policy(request={"resource": self.name})
-        return Policy.from_pb(resp)
+        pass
 
     def set_iam_policy(self, policy):
         """Sets the IAM access control policy for this table. Replaces any
@@ -200,11 +193,7 @@ class Table(object):
         :rtype: :class:`google.cloud.bigtable.policy.Policy`
         :returns: The current IAM policy of this table.
         """
-        table_client = self._instance._client.table_admin_client
-        resp = table_client.set_iam_policy(
-            request={"resource": self.name, "policy": policy.to_pb()}
-        )
-        return Policy.from_pb(resp)
+        pass
 
     def test_iam_permissions(self, permissions):
         """Tests whether the caller has the given permissions for this table.
@@ -229,11 +218,7 @@ class Table(object):
         :rtype: list
         :returns: A List(string) of permissions allowed on the table.
         """
-        table_client = self._instance._client.table_admin_client
-        resp = table_client.test_iam_permissions(
-            request={"resource": self.name, "permissions": permissions}
-        )
-        return list(resp.permissions)
+        pass
 
     def column_family(self, column_family_id, gc_rule=None):
         """Factory to create a column family associated with this table.
@@ -494,17 +479,7 @@ class Table(object):
                   Keys are cluster ids and values are
                   :class: 'ClusterState' instances.
         """
-
-        REPLICATION_VIEW = enums.Table.View.REPLICATION_VIEW
-        table_client = self._instance._client.table_admin_client
-        table_pb = table_client.get_table(
-            request={"name": self.name, "view": REPLICATION_VIEW}
-        )
-
-        return {
-            cluster_id: ClusterState(value_pb.replication_state)
-            for cluster_id, value_pb in table_pb.cluster_states.items()
-        }
+        pass
 
     def get_encryption_info(self):
         """List the encryption info for each cluster owned by this table.
@@ -517,21 +492,7 @@ class Table(object):
         :returns: Dictionary of encryption info for this table. Keys are cluster ids and
                   values are tuples of :class:`google.cloud.bigtable.encryption.EncryptionInfo` instances.
         """
-        ENCRYPTION_VIEW = enums.Table.View.ENCRYPTION_VIEW
-        table_client = self._instance._client.table_admin_client
-        table_pb = table_client.get_table(
-            request={"name": self.name, "view": ENCRYPTION_VIEW}
-        )
-
-        return {
-            cluster_id: tuple(
-                (
-                    EncryptionInfo._from_pb(info_pb)
-                    for info_pb in value_pb.encryption_info
-                )
-            )
-            for cluster_id, value_pb in table_pb.cluster_states.items()
-        }
+        pass
 
     def read_row(self, row_key, filter_=None, retry=DEFAULT_RETRY_READ_ROWS):
         """Read a single row from this table.
@@ -680,12 +641,7 @@ class Table(object):
         :rtype: :class:`.PartialRowData`
         :returns: A :class:`.PartialRowData` for each row returned
         """
-        warnings.warn(
-            "`yield_rows()` is deprecated; use `read_rows()` instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.read_rows(**kwargs)
+        pass
 
     def mutate_rows(self, rows, retry=DEFAULT_RETRY, timeout=DEFAULT):
         """Mutates multiple rows in bulk.
@@ -776,12 +732,7 @@ class Table(object):
                   or by casting to a :class:`list` and can be cancelled by
                   calling ``cancel()``.
         """
-        data_client = self._instance._client.table_data_client
-        response_iterator = data_client.sample_row_keys(
-            request={"table_name": self.name, "app_profile_id": self._app_profile_id}
-        )
-
-        return response_iterator
+        pass
 
     def truncate(self, timeout=None):
         """Truncate the table
@@ -803,17 +754,7 @@ class Table(object):
                 due to a retryable error and retry attempts failed.
                 ValueError: If the parameters are invalid.
         """
-        client = self._instance._client
-        table_admin_client = client.table_admin_client
-        if timeout:
-            table_admin_client.drop_row_range(
-                request={"name": self.name, "delete_all_data_from_table": True},
-                timeout=timeout,
-            )
-        else:
-            table_admin_client.drop_row_range(
-                request={"name": self.name, "delete_all_data_from_table": True}
-            )
+        pass
 
     def drop_by_prefix(self, row_key_prefix, timeout=None):
         """
@@ -839,20 +780,7 @@ class Table(object):
                 due to a retryable error and retry attempts failed.
                 ValueError: If the parameters are invalid.
         """
-        client = self._instance._client
-        table_admin_client = client.table_admin_client
-        if timeout:
-            table_admin_client.drop_row_range(
-                request={
-                    "name": self.name,
-                    "row_key_prefix": _to_bytes(row_key_prefix),
-                },
-                timeout=timeout,
-            )
-        else:
-            table_admin_client.drop_row_range(
-                request={"name": self.name, "row_key_prefix": _to_bytes(row_key_prefix)}
-            )
+        pass
 
     def mutations_batcher(
         self, flush_count=FLUSH_COUNT, max_row_bytes=MAX_MUTATION_SIZE
@@ -896,13 +824,7 @@ class Table(object):
         :rtype: :class:`.Backup`
         :returns: A backup linked to this table.
         """
-        return Backup(
-            backup_id,
-            self._instance,
-            cluster_id=cluster_id,
-            table_id=self.table_id,
-            expire_time=expire_time,
-        )
+        pass
 
     def list_backups(self, cluster_id=None, filter_=None, order_by=None, page_size=0):
         """List Backups for this Table.
@@ -984,32 +906,7 @@ class Table(object):
         :raises: :class:`ValueError <exceptions.ValueError>` if one of the
                  returned Backups' name is not of the expected format.
         """
-        cluster_id = cluster_id or "-"
-
-        backups_filter = "source_table:{}".format(self.name)
-        if filter_:
-            backups_filter = "({}) AND ({})".format(backups_filter, filter_)
-
-        parent = BaseBigtableTableAdminClient.cluster_path(
-            project=self._instance._client.project,
-            instance=self._instance.instance_id,
-            cluster=cluster_id,
-        )
-        client = self._instance._client.table_admin_client
-        backup_list_pb = client.list_backups(
-            request={
-                "parent": parent,
-                "filter": backups_filter,
-                "order_by": order_by,
-                "page_size": page_size,
-            }
-        )
-
-        result = []
-        for backup_pb in backup_list_pb.backups:
-            result.append(Backup.from_pb(backup_pb, self._instance))
-
-        return result
+        pass
 
     def restore(self, new_table_id, cluster_id=None, backup_id=None, backup_name=None):
         """Creates a new Table by restoring from the Backup specified by either
@@ -1047,21 +944,7 @@ class Table(object):
                  due to a retryable error and retry attempts failed.
         :raises: ValueError: If the parameters are invalid.
         """
-        api = self._instance._client.table_admin_client
-        if not backup_name:
-            backup_name = BaseBigtableTableAdminClient.backup_path(
-                project=self._instance._client.project,
-                instance=self._instance.instance_id,
-                cluster=cluster_id,
-                backup=backup_id,
-            )
-        return api._restore_table(
-            request={
-                "parent": self._instance.name,
-                "table_id": new_table_id,
-                "backup": backup_name,
-            }
-        )
+        pass
 
 
 class _RetryableMutateRowsWorker(object):
@@ -1108,7 +991,7 @@ class _RetryableMutateRowsWorker(object):
 
     @staticmethod
     def _is_retryable(status):
-        return status is None or status.code in RETRYABLE_CODES
+        pass
 
     def _do_mutate_retryable_rows(self):
         """Mutate all the rows that are eligible for retry.
@@ -1126,69 +1009,7 @@ class _RetryableMutateRowsWorker(object):
                  * :exc:`RuntimeError` if the number of responses doesn't
                    match the number of rows that were retried
         """
-        retryable_rows = []
-        index_into_all_rows = []
-        for index, status in enumerate(self.responses_statuses):
-            if self._is_retryable(status):
-                retryable_rows.append(self.rows[index])
-                index_into_all_rows.append(index)
-
-        if not retryable_rows:
-            # All mutations are either successful or non-retryable now.
-            return self.responses_statuses
-
-        entries = _compile_mutation_entries(self.table_name, retryable_rows)
-        data_client = self.client.table_data_client
-
-        kwargs = {}
-        if self.timeout is not None:
-            kwargs["timeout"] = timeout.ExponentialTimeout(deadline=self.timeout)
-
-        try:
-            responses = data_client.mutate_rows(
-                table_name=self.table_name,
-                entries=entries,
-                app_profile_id=self.app_profile_id,
-                retry=None,
-                **kwargs
-            )
-        except RETRYABLE_MUTATION_ERRORS as exc:
-            # If an exception, considered retryable by `RETRYABLE_MUTATION_ERRORS`, is
-            # returned from the initial call, consider
-            # it to be retryable. Wrap as a Bigtable Retryable Error.
-            # For InternalServerError, it is only retriable if the message is related to RST Stream messages
-            if _retriable_internal_server_error(exc) or not isinstance(
-                exc, InternalServerError
-            ):
-                raise _BigtableRetryableError
-            else:
-                # re-raise the original exception
-                raise
-
-        num_responses = 0
-        num_retryable_responses = 0
-        for response in responses:
-            for entry in response.entries:
-                num_responses += 1
-                index = index_into_all_rows[entry.index]
-                self.responses_statuses[index] = entry.status
-                if self._is_retryable(entry.status):
-                    num_retryable_responses += 1
-                if entry.status.code == 0:
-                    self.rows[index].clear()
-
-        if len(retryable_rows) != num_responses:
-            raise RuntimeError(
-                "Unexpected number of responses",
-                num_responses,
-                "Expected",
-                len(retryable_rows),
-            )
-
-        if num_retryable_responses:
-            raise _BigtableRetryableError
-
-        return self.responses_statuses
+        pass
 
 
 class ClusterState(object):
@@ -1340,37 +1161,7 @@ def _create_row_request(
 
 
 def _compile_mutation_entries(table_name, rows):
-    """Create list of mutation entries
-
-    :type table_name: str
-    :param table_name: The name of the table to write to.
-
-    :type rows: list
-    :param rows: List or other iterable of :class:`.DirectRow` instances.
-
-    :rtype: List[:class:`data_messages_v2_pb2.MutateRowsRequest.Entry`]
-    :returns: entries corresponding to the inputs.
-    :raises: :exc:`~.table.TooManyMutationsError` if the number of mutations is
-             greater than the max ({})
-    """.format(
-        _MAX_BULK_MUTATIONS
-    )
-    entries = []
-    mutations_count = 0
-    entry_klass = data_messages_v2_pb2.MutateRowsRequest.Entry
-
-    for row in rows:
-        _check_row_table_name(table_name, row)
-        _check_row_type(row)
-        mutations = row._get_mutations()
-        entries.append(entry_klass(row_key=row.row_key, mutations=mutations))
-        mutations_count += len(mutations)
-
-    if mutations_count > _MAX_BULK_MUTATIONS:
-        raise TooManyMutationsError(
-            "Maximum number of mutations is %s" % (_MAX_BULK_MUTATIONS,)
-        )
-    return entries
+    pass
 
 
 def _check_row_table_name(table_name, row):
@@ -1386,11 +1177,7 @@ def _check_row_table_name(table_name, row):
     :raises: :exc:`~.table.TableMismatchError` if the row does not belong to
              the table.
     """
-    if row.table is not None and row.table.name != table_name:
-        raise TableMismatchError(
-            "Row %s is a part of %s table. Current table: %s"
-            % (row.row_key, row.table.name, table_name)
-        )
+    pass
 
 
 def _check_row_type(row):
@@ -1403,7 +1190,4 @@ def _check_row_type(row):
     :raises: :class:`TypeError <exceptions.TypeError>` if the row is not an
              instance of DirectRow.
     """
-    if not isinstance(row, DirectRow):
-        raise TypeError(
-            "Bulk processing can not be applied for " "conditional or append mutations."
-        )
+    pass

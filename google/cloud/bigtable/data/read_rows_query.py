@@ -93,7 +93,7 @@ class RowRange:
         """
         Returns the start key of the range. If None, the range is unbounded on the left.
         """
-        return self._pb.start_key_closed or self._pb.start_key_open or None
+        pass
 
     @property
     def end_key(self) -> bytes | None:
@@ -103,7 +103,7 @@ class RowRange:
         Returns:
             bytes | None: The end key of the range, or None if the range is unbounded on the right.
         """
-        return self._pb.end_key_closed or self._pb.end_key_open or None
+        pass
 
     @property
     def start_is_inclusive(self) -> bool:
@@ -115,7 +115,7 @@ class RowRange:
         Returns:
             bool: Whether the range is inclusive of the start key.
         """
-        return not bool(self._pb.start_key_open)
+        pass
 
     @property
     def end_is_inclusive(self) -> bool:
@@ -127,7 +127,7 @@ class RowRange:
         Returns:
             bool: Whether the range is inclusive of the end key.
         """
-        return not bool(self._pb.end_key_open)
+        pass
 
     def _to_pb(self) -> RowRangePB:
         """
@@ -162,12 +162,7 @@ class RowRange:
         Returns:
             RowRange: The converted RowRange
         """
-        formatted_data = {
-            k: v.encode() if isinstance(v, str) else v for k, v in data.items()
-        }
-        instance = cls()
-        instance._pb = RowRangePB(**formatted_data)
-        return instance
+        pass
 
     def __bool__(self) -> bool:
         """
@@ -262,7 +257,7 @@ class ReadRowsQuery:
         Returns:
             list[bytes]: the row keys in this query
         """
-        return list(self._row_set.row_keys)
+        pass
 
     @property
     def row_ranges(self) -> list[RowRange]:
@@ -272,7 +267,7 @@ class ReadRowsQuery:
         Returns:
             list[RowRange]: the row ranges in this query
         """
-        return [RowRange._from_pb(r) for r in self._row_set.row_ranges]
+        pass
 
     @property
     def limit(self) -> int | None:
@@ -284,7 +279,7 @@ class ReadRowsQuery:
         Returns:
             int | None: the maximum number of rows to return by this query
         """
-        return self._limit or None
+        pass
 
     @limit.setter
     def limit(self, new_limit: int | None):
@@ -298,9 +293,7 @@ class ReadRowsQuery:
         Raises:
             ValueError: if new_limit is < 0
         """
-        if new_limit is not None and new_limit < 0:
-            raise ValueError("limit must be >= 0")
-        self._limit = new_limit
+        pass
 
     @property
     def filter(self) -> RowFilter | None:
@@ -310,7 +303,7 @@ class ReadRowsQuery:
         Returns:
             RowFilter | None: the RowFilter applied to this query
         """
-        return self._filter
+        pass
 
     @filter.setter
     def filter(self, row_filter: RowFilter | None):
@@ -320,7 +313,7 @@ class ReadRowsQuery:
         Args:
             row_filter: a RowFilter to apply to this query
         """
-        self._filter = row_filter
+        pass
 
     def add_key(self, row_key: str | bytes):
         """
@@ -333,12 +326,7 @@ class ReadRowsQuery:
         Raises:
             ValueError: if an input is not a string or bytes
         """
-        if isinstance(row_key, str):
-            row_key = row_key.encode()
-        elif not isinstance(row_key, bytes):
-            raise ValueError("row_key must be string or bytes")
-        if row_key not in self._row_set.row_keys:
-            self._row_set.row_keys.append(row_key)
+        pass
 
     def add_range(
         self,
@@ -350,8 +338,7 @@ class ReadRowsQuery:
         Args:
             row_range: a range of row keys to add to this query
         """
-        if row_range not in self.row_ranges:
-            self._row_set.row_ranges.append(row_range._pb)
+        pass
 
     def shard(self, shard_keys: RowKeySamples) -> ShardedQuery:
         """
@@ -365,43 +352,7 @@ class ReadRowsQuery:
         Raises:
             AttributeError: if the query contains a limit
         """
-        if self.limit is not None:
-            raise AttributeError("Cannot shard query with a limit")
-        if len(self.row_keys) == 0 and len(self.row_ranges) == 0:
-            # empty query represents full scan
-            # ensure that we have at least one key or range
-            full_scan_query = ReadRowsQuery(
-                row_ranges=RowRange(), row_filter=self.filter
-            )
-            return full_scan_query.shard(shard_keys)
-
-        sharded_queries: dict[int, ReadRowsQuery] = defaultdict(
-            lambda: ReadRowsQuery(row_filter=self.filter)
-        )
-        # the split_points divde our key space into segments
-        # each split_point defines last key that belongs to a segment
-        # our goal is to break up the query into subqueries that each operate in a single segment
-        split_points = [sample[0] for sample in shard_keys if sample[0]]
-
-        # handle row_keys
-        # use binary search to find the segment that each key belongs to
-        for this_key in list(self.row_keys):
-            # bisect_left: in case of exact match, pick left side (keys are inclusive ends)
-            segment_index = bisect_left(split_points, this_key)
-            sharded_queries[segment_index].add_key(this_key)
-
-        # handle row_ranges
-        for this_range in self.row_ranges:
-            # defer to _shard_range helper
-            for segment_index, added_range in self._shard_range(
-                this_range, split_points
-            ):
-                sharded_queries[segment_index].add_range(added_range)
-        # return list of queries ordered by segment index
-        # pull populated segments out of sharded_queries dict
-        keys = sorted(list(sharded_queries.keys()))
-        # return list of queries
-        return [sharded_queries[k] for k in keys]
+        pass
 
     @staticmethod
     def _shard_range(
@@ -418,70 +369,7 @@ class ReadRowsQuery:
         Returns:
             list[tuple[int, RowRange]]: a list of tuples, containing a segment index and a new sub-range.
         """
-        # 1. find the index of the segment the start key belongs to
-        if orig_range.start_key is None:
-            # if range is open on the left, include first segment
-            start_segment = 0
-        else:
-            # use binary search to find the segment the start key belongs to
-            # bisect method determines how we break ties when the start key matches a split point
-            # if inclusive, bisect_left to the left segment, otherwise bisect_right
-            bisect = bisect_left if orig_range.start_is_inclusive else bisect_right
-            start_segment = bisect(split_points, orig_range.start_key)
-
-        # 2. find the index of the segment the end key belongs to
-        if orig_range.end_key is None:
-            # if range is open on the right, include final segment
-            end_segment = len(split_points)
-        else:
-            # use binary search to find the segment the end key belongs to.
-            end_segment = bisect_left(
-                split_points, orig_range.end_key, lo=start_segment
-            )
-            # note: end_segment will always bisect_left, because split points represent inclusive ends
-            # whether the end_key is includes the split point or not, the result is the same segment
-        # 3. create new range definitions for each segment this_range spans
-        if start_segment == end_segment:
-            # this_range is contained in a single segment.
-            # Add this_range to that segment's query only
-            return [(start_segment, orig_range)]
-        else:
-            results: list[tuple[int, RowRange]] = []
-            # this_range spans multiple segments. Create a new range for each segment's query
-            # 3a. add new range for first segment this_range spans
-            # first range spans from start_key to the split_point representing the last key in the segment
-            last_key_in_first_segment = split_points[start_segment]
-            start_range = RowRange(
-                start_key=orig_range.start_key,
-                start_is_inclusive=orig_range.start_is_inclusive,
-                end_key=last_key_in_first_segment,
-                end_is_inclusive=True,
-            )
-            results.append((start_segment, start_range))
-            # 3b. add new range for last segment this_range spans
-            # we start the final range using the end key from of the previous segment, with is_inclusive=False
-            previous_segment = end_segment - 1
-            last_key_before_segment = split_points[previous_segment]
-            end_range = RowRange(
-                start_key=last_key_before_segment,
-                start_is_inclusive=False,
-                end_key=orig_range.end_key,
-                end_is_inclusive=orig_range.end_is_inclusive,
-            )
-            results.append((end_segment, end_range))
-            # 3c. add new spanning range to all segments other than the first and last
-            for this_segment in range(start_segment + 1, end_segment):
-                prev_segment = this_segment - 1
-                prev_end_key = split_points[prev_segment]
-                this_end_key = split_points[prev_segment + 1]
-                new_range = RowRange(
-                    start_key=prev_end_key,
-                    start_is_inclusive=False,
-                    end_key=this_end_key,
-                    end_is_inclusive=True,
-                )
-                results.append((this_segment, new_range))
-            return results
+        pass
 
     def _to_pb(self, table) -> ReadRowsRequestPB:
         """

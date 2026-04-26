@@ -160,54 +160,7 @@ class _MutateRowsOperationAsync:
                 retry after the attempt is complete
             GoogleAPICallError: if the gapic rpc fails
         """
-        request_entries = [self.mutations[idx].proto for idx in self.remaining_indices]
-        # track mutations in this request that have not been finalized yet
-        active_request_indices = {
-            req_idx: orig_idx for req_idx, orig_idx in enumerate(self.remaining_indices)
-        }
-        self.remaining_indices = []
-        if not request_entries:
-            # no more mutations. return early
-            return
-        # make gapic request
-        try:
-            result_generator = await self._gapic_fn(
-                request=types_pb.MutateRowsRequest(
-                    entries=request_entries,
-                    app_profile_id=self._target.app_profile_id,
-                    **self._target._request_path,
-                ),
-                timeout=next(self.timeout_generator),
-                retry=None,
-            )
-            async for result_list in result_generator:
-                for result in result_list.entries:
-                    # convert sub-request index to global index
-                    orig_idx = active_request_indices[result.index]
-                    entry_error = core_exceptions.from_grpc_status(
-                        result.status.code,
-                        result.status.message,
-                        details=result.status.details,
-                    )
-                    if result.status.code != 0:
-                        # mutation failed; update error list (and remaining_indices if retryable)
-                        self._handle_entry_error(orig_idx, entry_error)
-                    elif orig_idx in self.errors:
-                        # mutation succeeded; remove from error list
-                        del self.errors[orig_idx]
-                    # remove processed entry from active list
-                    del active_request_indices[result.index]
-        except Exception as exc:
-            # add this exception to list for each mutation that wasn't
-            # already handled, and update remaining_indices if mutation is retryable
-            for idx in active_request_indices.values():
-                self._handle_entry_error(idx, exc)
-            # bubble up exception to be handled by retry wrapper
-            raise
-        # check if attempt succeeded, or needs to be retried
-        if self.remaining_indices:
-            # unfinished work; raise exception to trigger retry
-            raise bt_exceptions._MutateRowsIncomplete
+        pass
 
     def _handle_entry_error(self, idx: int, exc: Exception):
         """

@@ -103,15 +103,7 @@ class Backup(object):
 
         :raises: ValueError: If the 'cluster' has not been set.
         """
-        if not self._cluster:
-            raise ValueError('"cluster" parameter must be set')
-
-        return BaseBigtableTableAdminClient.backup_path(
-            project=self._instance._client.project,
-            instance=self._instance.instance_id,
-            cluster=self._cluster,
-            backup=self.backup_id,
-        )
+        pass
 
     @property
     def cluster(self):
@@ -140,13 +132,7 @@ class Backup(object):
         :rtype: str
         :returns: A full path to the parent cluster.
         """
-        if not self._parent and self._cluster:
-            self._parent = BaseBigtableTableAdminClient.cluster_path(
-                project=self._instance._client.project,
-                instance=self._instance.instance_id,
-                cluster=self._cluster,
-            )
-        return self._parent
+        pass
 
     @property
     def source_table(self):
@@ -162,13 +148,7 @@ class Backup(object):
         :rtype: str
         :returns: The Table name.
         """
-        if not self._source_table and self.table_id:
-            self._source_table = BaseBigtableTableAdminClient.table_path(
-                project=self._instance._client.project,
-                instance=self._instance.instance_id,
-                table=self.table_id,
-            )
-        return self._source_table
+        pass
 
     @property
     def expire_time(self):
@@ -178,11 +158,11 @@ class Backup(object):
         :returns: A 'datetime' object representing the expiration time of
                   this Backup.
         """
-        return self._expire_time
+        pass
 
     @expire_time.setter
     def expire_time(self, new_expire_time):
-        self._expire_time = new_expire_time
+        pass
 
     @property
     def encryption_info(self):
@@ -191,7 +171,7 @@ class Backup(object):
         :rtype: :class:`google.cloud.bigtable.encryption.EncryptionInfo`
         :returns: The encryption information for this backup.
         """
-        return self._encryption_info
+        pass
 
     @property
     def start_time(self):
@@ -201,7 +181,7 @@ class Backup(object):
         :returns: A 'datetime' object representing the time when the creation
                   of this Backup had started.
         """
-        return self._start_time
+        pass
 
     @property
     def end_time(self):
@@ -211,7 +191,7 @@ class Backup(object):
         :returns: A 'datetime' object representing the time when the creation
                   of this Backup was finished.
         """
-        return self._end_time
+        pass
 
     @property
     def size_bytes(self):
@@ -220,7 +200,7 @@ class Backup(object):
         :rtype: int
         :returns: The size of this Backup, in bytes.
         """
-        return self._size_bytes
+        pass
 
     @property
     def state(self):
@@ -229,7 +209,7 @@ class Backup(object):
         :rtype: :class:`~google.cloud.bigtable_admin_v2.types.table.Backup.State`
         :returns: The current state of this Backup.
         """
-        return self._state
+        pass
 
     @classmethod
     def from_pb(cls, backup_pb, instance):
@@ -380,14 +360,7 @@ class Backup(object):
         :type new_expire_time: :class:`datetime.datetime`
         :param new_expire_time: the new expiration time timestamp
         """
-        backup_update = table.Backup(
-            name=self.name,
-            expire_time=_datetime_to_pb_timestamp(new_expire_time),
-        )
-        update_mask = field_mask_pb2.FieldMask(paths=["expire_time"])
-        api = self._instance._client.table_admin_client
-        api.update_backup(request={"backup": backup_update, "update_mask": update_mask})
-        self._expire_time = new_expire_time
+        pass
 
     def delete(self):
         """Delete this Backup."""
@@ -423,18 +396,7 @@ class Backup(object):
                  due to a retryable error and retry attempts failed.
         :raises: ValueError: If the parameters are invalid.
         """
-        api = self._instance._client.table_admin_client
-        if instance_id:
-            parent = BaseBigtableTableAdminClient.instance_path(
-                project=self._instance._client.project,
-                instance=instance_id,
-            )
-        else:
-            parent = self._instance.name
-
-        return api._restore_table(
-            request={"parent": parent, "table_id": table_id, "backup": self.name}
-        )
+        pass
 
     def get_iam_policy(self):
         """Gets the IAM access control policy for this backup.
@@ -442,9 +404,7 @@ class Backup(object):
         :rtype: :class:`google.cloud.bigtable.policy.Policy`
         :returns: The current IAM policy of this backup.
         """
-        table_api = self._instance._client.table_admin_client
-        response = table_api.get_iam_policy(request={"resource": self.name})
-        return Policy.from_pb(response)
+        pass
 
     def set_iam_policy(self, policy):
         """Sets the IAM access control policy for this backup. Replaces any
@@ -460,11 +420,7 @@ class Backup(object):
         :rtype: :class:`google.cloud.bigtable.policy.Policy`
         :returns: The current IAM policy of this backup.
         """
-        table_api = self._instance._client.table_admin_client
-        response = table_api.set_iam_policy(
-            request={"resource": self.name, "policy": policy.to_pb()}
-        )
-        return Policy.from_pb(response)
+        pass
 
     def test_iam_permissions(self, permissions):
         """Tests whether the caller has the given permissions for this backup.
@@ -482,8 +438,4 @@ class Backup(object):
         :rtype: list
         :returns: A List(string) of permissions allowed on the backup.
         """
-        table_api = self._instance._client.table_admin_client
-        response = table_api.test_iam_permissions(
-            request={"resource": self.name, "permissions": permissions}
-        )
-        return list(response.permissions)
+        pass

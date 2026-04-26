@@ -110,11 +110,7 @@ class AppProfile(object):
         :rtype: str
         :returns: The AppProfile name.
         """
-        return self.instance_admin_client.app_profile_path(
-            self._instance._client.project,
-            self._instance.instance_id,
-            self.app_profile_id,
-        )
+        pass
 
     @property
     def instance_admin_client(self):
@@ -123,7 +119,7 @@ class AppProfile(object):
         :rtype: :class:`.bigtable_admin_pb2.BigtableInstanceAdmin`
         :returns: A BigtableInstanceAdmin instance.
         """
-        return self._instance._client.instance_admin_client
+        pass
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):

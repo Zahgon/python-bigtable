@@ -49,7 +49,7 @@ class PartialCellData(object):  # pragma: NO COVER
         self.value = value
 
     def append_value(self, value):
-        self.value += value
+        pass
 
 
 class InvalidReadRowsResponse(RuntimeError):
@@ -80,12 +80,7 @@ def _retriable_internal_server_error(exc):
 
 def _retry_read_rows_exception(exc):
     """Return True if the exception is retriable for read row requests."""
-    if isinstance(exc, grpc.RpcError):
-        exc = exceptions.from_grpc_error(exc)
-
-    return _retriable_internal_server_error(exc) or isinstance(
-        exc, (exceptions.ServiceUnavailable, exceptions.DeadlineExceeded)
-    )
+    pass
 
 
 DEFAULT_RETRY_READ_ROWS = retry.Retry(
@@ -172,25 +167,7 @@ class PartialRowsData(object):
         DEPRECATED: this property is deprecated and will be removed in the
         future.
         """
-        warnings.warn(
-            "`PartialRowsData#state()` is deprecated and will be removed in the future",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        # Best effort: try to map internal RowMerger states to old strings for
-        # backwards compatibility
-        internal_state = self._row_merger.state
-        if internal_state == _State.ROW_START:
-            return self.NEW_ROW
-        # note: _State.CELL_START, _State.CELL_COMPLETE are transient states
-        # and will not be visible in between chunks
-        elif internal_state == _State.CELL_IN_PROGRESS:
-            return self.CELL_IN_PROGRESS
-        elif internal_state == _State.ROW_COMPLETE:
-            return self.NEW_ROW
-        else:
-            raise RuntimeError("unexpected internal state: " + self._)
+        pass
 
     def cancel(self):
         """Cancels the iterator, closing the stream."""
@@ -209,37 +186,23 @@ class PartialRowsData(object):
                           an additional ``ReadRowsResponse``. You can use this
                           to avoid long wait times.
         """
-        for row in self:
-            self.rows[row.row_key] = row
+        pass
 
     def _create_retry_request(self):
         """Helper for :meth:`__iter__`."""
-        req_manager = _ReadRowsRequestManager(
-            self.request, self.last_scanned_row_key, self._counter
-        )
-        return req_manager.build_updated_request()
+        pass
 
     def _on_error(self, exc):
         """Helper for :meth:`__iter__`."""
-        # restart the read scan from AFTER the last successfully read row
-        retry_request = self.request
-        if self.last_scanned_row_key:
-            retry_request = self._create_retry_request()
-
-        self._row_merger = _RowMerger(self._row_merger.last_seen_row_key)
-        self.response_iterator = self.read_method(retry_request)
+        pass
 
     def _read_next(self):
         """Helper for :meth:`__iter__`."""
-        return next(self.response_iterator)
+        pass
 
     def _read_next_response(self):
         """Helper for :meth:`__iter__`."""
-        resp_protoplus = self.retry(self._read_next, on_error=self._on_error)()
-        # unwrap the underlying protobuf, there is a significant amount of
-        # overhead that protoplus imposes for very little gain. The protos
-        # are not user visible, so we just use the raw protos for merging.
-        return data_messages_v2_pb2.ReadRowsResponse.pb(resp_protoplus)
+        pass
 
     def __iter__(self):
         """Consume the ``ReadRowsResponse`` s from the stream.
@@ -295,86 +258,26 @@ class _ReadRowsRequestManager(object):
 
     def build_updated_request(self):
         """Updates the given message request as per last scanned key"""
-
-        resume_request = data_messages_v2_pb2.ReadRowsRequest()
-        data_messages_v2_pb2.ReadRowsRequest.copy_from(resume_request, self.message)
-
-        if self.message.rows_limit != 0:
-            row_limit_remaining = self.message.rows_limit - self.rows_read_so_far
-            if row_limit_remaining > 0:
-                resume_request.rows_limit = row_limit_remaining
-            else:
-                raise InvalidRetryRequest
-
-        # if neither RowSet.row_keys nor RowSet.row_ranges currently exist,
-        # add row_range that starts with last_scanned_key as start_key_open
-        # to request only rows that have not been returned yet
-        if "rows" not in self.message:
-            row_range = data_v2_pb2.RowRange(start_key_open=self.last_scanned_key)
-            resume_request.rows = data_v2_pb2.RowSet(row_ranges=[row_range])
-        else:
-            row_keys = self._filter_rows_keys()
-            row_ranges = self._filter_row_ranges()
-
-            if len(row_keys) == 0 and len(row_ranges) == 0:
-                # Avoid sending empty row_keys and row_ranges
-                # if that was not the intention
-                raise InvalidRetryRequest
-
-            resume_request.rows = data_v2_pb2.RowSet(
-                row_keys=row_keys, row_ranges=row_ranges
-            )
-        return resume_request
+        pass
 
     def _filter_rows_keys(self):
         """Helper for :meth:`build_updated_request`"""
-        return [
-            row_key
-            for row_key in self.message.rows.row_keys
-            if row_key > self.last_scanned_key
-        ]
+        pass
 
     def _filter_row_ranges(self):
         """Helper for :meth:`build_updated_request`"""
-        new_row_ranges = []
-
-        for row_range in self.message.rows.row_ranges:
-            # if current end_key (open or closed) is set, return its value,
-            # if not, set to empty string ('').
-            # NOTE: Empty string in end_key means "end of table"
-            end_key = self._end_key_set(row_range)
-            # if end_key is already read, skip to the next row_range
-            if end_key and self._key_already_read(end_key):
-                continue
-
-            # if current start_key (open or closed) is set, return its value,
-            # if not, then set to empty string ('')
-            # NOTE: Empty string in start_key means "beginning of table"
-            start_key = self._start_key_set(row_range)
-
-            # if start_key was already read or doesn't exist,
-            # create a row_range with last_scanned_key as start_key_open
-            # to be passed to retry request
-            retry_row_range = row_range
-            if self._key_already_read(start_key):
-                retry_row_range = copy.deepcopy(row_range)
-                retry_row_range.start_key_closed = _to_bytes("")
-                retry_row_range.start_key_open = self.last_scanned_key
-
-            new_row_ranges.append(retry_row_range)
-
-        return new_row_ranges
+        pass
 
     def _key_already_read(self, key):
         """Helper for :meth:`_filter_row_ranges`"""
-        return key <= self.last_scanned_key
+        pass
 
     @staticmethod
     def _start_key_set(row_range):
         """Helper for :meth:`_filter_row_ranges`"""
-        return row_range.start_key_open or row_range.start_key_closed
+        pass
 
     @staticmethod
     def _end_key_set(row_range):
         """Helper for :meth:`_filter_row_ranges`"""
-        return row_range.end_key_open or row_range.end_key_closed
+        pass

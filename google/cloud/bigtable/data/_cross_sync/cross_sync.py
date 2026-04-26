@@ -139,12 +139,7 @@ class CrossSync(metaclass=MappingMeta):
         Returns:
           - a list of results (or exceptions, if return_exceptions=True) in the same order as partial_list
         """
-        if not partial_list:
-            return []
-        awaitable_list = [partial() for partial in partial_list]
-        return await asyncio.gather(
-            *awaitable_list, return_exceptions=return_exceptions
-        )
+        pass
 
     @staticmethod
     async def wait(
@@ -176,16 +171,7 @@ class CrossSync(metaclass=MappingMeta):
                 the full timeout even if the event is set before the timeout.
                 This avoids creating a new background task
         """
-        if timeout is None:
-            await event.wait()
-        elif not async_break_early:
-            if not event.is_set():
-                await asyncio.sleep(timeout)
-        else:
-            try:
-                await asyncio.wait_for(event.wait(), timeout=timeout)
-            except asyncio.TimeoutError:
-                pass
+        pass
 
     @staticmethod
     def create_task(
@@ -217,7 +203,7 @@ class CrossSync(metaclass=MappingMeta):
         """
         Raises RuntimeError if the event loop is not running
         """
-        asyncio.get_running_loop()
+        pass
 
     @staticmethod
     def rm_aio(statement: T) -> T:
@@ -227,7 +213,7 @@ class CrossSync(metaclass=MappingMeta):
         All async keywords inside an rm_aio call are removed, along with
         `async with` and `async for` statements containing CrossSync.rm_aio() in the body
         """
-        return statement
+        pass
 
     class _Sync_Impl(metaclass=MappingMeta):
         """
@@ -266,7 +252,7 @@ class CrossSync(metaclass=MappingMeta):
             timeout: float | None = None,
             async_break_early: bool = True,
         ) -> None:
-            event.wait(timeout=timeout)
+            pass
 
         @staticmethod
         def gather_partials(
@@ -274,22 +260,7 @@ class CrossSync(metaclass=MappingMeta):
             return_exceptions: bool = False,
             sync_executor: concurrent.futures.ThreadPoolExecutor | None = None,
         ) -> list[T | BaseException]:
-            if not partial_list:
-                return []
-            if not sync_executor:
-                raise ValueError("sync_executor is required for sync version")
-            futures_list = [sync_executor.submit(partial) for partial in partial_list]
-            results_list: list[T | BaseException] = []
-            for future in futures_list:
-                found_exc = future.exception()
-                if found_exc is not None:
-                    if return_exceptions:
-                        results_list.append(found_exc)
-                    else:
-                        raise found_exc
-                else:
-                    results_list.append(future.result())
-            return results_list
+            pass
 
         @staticmethod
         def wait(
